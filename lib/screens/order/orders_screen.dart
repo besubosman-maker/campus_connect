@@ -185,7 +185,7 @@ class _OrdersScreenState extends State<OrdersScreen>
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       appBar: AppBar(
-        title: const Text('Campus Orders (ትዕዛዞች)'),
+        title: const Text('Orders & Payments (ትዕዛዞች)'),
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppConstants.primaryColor,
@@ -227,7 +227,7 @@ class _OrdersScreenState extends State<OrdersScreen>
           return const EmptyState(
             icon: Icons.shopping_bag_outlined,
             title: 'No purchases yet',
-            message: 'Browse listings and order items for campus meetups.',
+            message: 'Browse listings and order items for local community meetups.',
           );
         }
 
@@ -255,7 +255,7 @@ class _OrdersScreenState extends State<OrdersScreen>
           return const EmptyState(
             icon: Icons.sell_outlined,
             title: 'No incoming orders',
-            message: 'When students place orders for your listings, they will appear here.',
+            message: 'When buyers place orders for your listings, they will appear here.',
           );
         }
 

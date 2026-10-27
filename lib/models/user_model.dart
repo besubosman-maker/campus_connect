@@ -36,7 +36,7 @@ class UserModel {
     final data = (doc.data() as Map<String, dynamic>?) ?? {};
     return UserModel(
       uid: doc.id,
-      name: data['name'] as String? ?? 'Campus Student',
+      name: data['name'] as String? ?? 'Community Member',
       email: data['email'] as String? ?? '',
       photoUrl: data['photoUrl'] as String?,
       rating: (data['rating'] as num?)?.toDouble() ?? 0.0,
@@ -54,7 +54,7 @@ class UserModel {
   factory UserModel.fromMap(Map<String, dynamic> map, String id) {
     return UserModel(
       uid: id,
-      name: map['name'] as String? ?? 'Campus Student',
+      name: map['name'] as String? ?? 'Community Member',
       email: map['email'] as String? ?? '',
       photoUrl: map['photoUrl'] as String?,
       rating: (map['rating'] as num?)?.toDouble() ?? 0.0,

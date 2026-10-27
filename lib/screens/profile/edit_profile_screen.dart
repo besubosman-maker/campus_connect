@@ -219,7 +219,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                 // Personal Details Section
                 const Text(
-                  'Student Information',
+                  'Account Information',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 12),
@@ -252,12 +252,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   initialValue: user?.email ?? '',
                   readOnly: true,
                   decoration: InputDecoration(
-                    labelText: 'Campus Email',
+                    labelText: 'Email Address',
                     prefixIcon: const Icon(Icons.email_outlined),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     filled: true,
                     fillColor: Colors.grey[100],
-                    helperText: 'Student email cannot be changed',
+                    helperText: 'Account email cannot be changed',
                   ),
                 ),
                 const SizedBox(height: 28),
@@ -289,7 +289,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Set your Telebirr and CBE details so students buying your items can pay you directly.',
+                        'Set your Telebirr and CBE details so buyers can pay you directly.',
                         style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                       ),
                       const Divider(height: 24),

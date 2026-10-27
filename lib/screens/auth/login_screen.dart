@@ -55,11 +55,11 @@ class _LoginScreenState extends State<LoginScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Enter your campus student email to receive a password reset link:'),
+            const Text('Enter your email address to receive a password reset link:'),
             const SizedBox(height: 16),
             CustomTextField(
               controller: resetEmailController,
-              label: 'Student Email',
+              label: 'Email Address',
               prefixIcon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
             ),
@@ -131,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       child: const Icon(
-                        Icons.school_rounded,
+                        Icons.storefront_rounded,
                         size: 48,
                         color: Colors.white,
                       ),
@@ -147,12 +147,22 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: AppConstants.primaryColor,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
-                    'Buy, sell, and connect with fellow students safely',
+                    'Ethiopia\'s Community Marketplace for All',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppConstants.secondaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Buy, sell, and connect safely across neighborhoods & campuses',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
                       color: Colors.grey[600],
                     ),
                   ),
@@ -161,8 +171,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Email input
                   CustomTextField(
                     controller: _emailController,
-                    label: 'Campus Email',
-                    hint: 'student@university.edu',
+                    label: 'Email Address',
+                    hint: 'you@email.com (Gmail, Yahoo, etc.)',
                     prefixIcon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     validator: (val) {
@@ -170,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         return 'Email is required';
                       }
                       if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val.trim())) {
-                        return 'Enter a valid student email address';
+                        return 'Enter a valid email address';
                       }
                       return null;
                     },

@@ -29,7 +29,7 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       appBar: AppBar(
-        title: const Text('Student Profile'),
+        title: const Text('My Profile'),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -243,7 +243,7 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Complete trades and peers will leave reviews here to build your campus reputation.',
+                          'Complete trades and buyers will leave reviews here to build your trusted reputation.',
                           textAlign: TextAlign.center,
                           style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                         ),

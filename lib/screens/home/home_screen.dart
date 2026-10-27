@@ -133,23 +133,37 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: AppConstants.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.school, color: AppConstants.primaryColor, size: 24),
+                  child: const Icon(Icons.storefront_rounded, color: AppConstants.primaryColor, size: 24),
                 ),
                 const SizedBox(width: 10),
-                const Text(
-                  AppConstants.appName,
-                  style: TextStyle(
-                    color: AppConstants.primaryColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      AppConstants.appName,
+                      style: TextStyle(
+                        color: AppConstants.primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    Text(
+                      'All Communities',
+                      style: TextStyle(
+                        color: AppConstants.secondaryColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.receipt_long_outlined, color: AppConstants.primaryColor),
-                tooltip: 'Campus Orders',
+                tooltip: 'My Orders & Sales',
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -203,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           listingProvider.setSearchQuery(val);
                         },
                         decoration: InputDecoration(
-                          hintText: 'Search textbooks, electronics, dorm gear...',
+                          hintText: 'Search electronics, home goods, vehicles, fashion...',
                           hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
                           prefixIcon: const Icon(Icons.search, color: Colors.grey),
                           suffixIcon: _searchController.text.isNotEmpty

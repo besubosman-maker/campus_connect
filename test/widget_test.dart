@@ -21,9 +21,10 @@ void main() {
     expect(find.text('(12)'), findsOneWidget);
   });
 
-  test('AppConstants categories includes expected standard categories', () {
-    expect(AppConstants.categories, contains('Textbooks'));
-    expect(AppConstants.categories, contains('Electronics'));
-    expect(AppConstants.categories, contains('Furniture'));
+  test('AppConstants categories includes expected community categories', () {
+    expect(AppConstants.categories, contains('Electronics & Phones'));
+    expect(AppConstants.categories, contains('Home & Furniture'));
+    expect(AppConstants.categories, contains('Books & Education'));
+    expect(AppConstants.categories, contains('Vehicles & Auto'));
   });
 }

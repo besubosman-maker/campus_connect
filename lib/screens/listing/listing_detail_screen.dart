@@ -210,8 +210,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     final listing = _listing!;
     final subject = '[CampusConnect] Inquiry about "${listing.title}"';
     final body = 'Hi ${_seller!.name},\n\n'
-        'I am interested in buying your item "${listing.title}" on CampusConnect for \$${listing.price.toStringAsFixed(2)}.\n\n'
-        'Is it still available? I would like to arrange a meetup on campus.\n\n'
+        'I am interested in buying your item "${listing.title}" on CampusConnect for ${AppConstants.currencySymbol}${listing.price.toStringAsFixed(2)}.\n\n'
+        'Is it still available? I would like to arrange a meetup.\n\n'
         'Thanks!';
 
     final launched = await EmailService.launchEmailApp(
@@ -257,16 +257,16 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     final currencyFormat = NumberFormat.currency(symbol: AppConstants.currencySymbol, decimalDigits: 2);
 
     final locations = [
-      'Main Campus Library',
-      'Student Center',
-      'Cafeteria / Dining Hall',
-      'Science Hall',
-      'Campus Dorms Quad',
-      'Other',
+      'Public Café / Coffee Shop',
+      'Mall / Shopping Center',
+      'Bank / Telebirr Center',
+      'Campus / University Gate',
+      'Supermarket / Market Center',
+      'Other Public Place',
     ];
 
     final times = [
-      'Today after class',
+      'Today',
       'Tomorrow afternoon',
       'This weekend',
       'Flexible / Any time',
@@ -309,7 +309,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Place Campus Order',
+                          'Place Order (ትዕዛዝ ማዘዣ)',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,

@@ -27,7 +27,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   final _descriptionController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
 
-  String _selectedCategory = 'Textbooks';
+  String _selectedCategory = 'Electronics & Phones';
   final List<XFile> _newImages = [];
   List<String> _existingImageUrls = [];
   bool _isSubmitting = false;
@@ -393,9 +393,9 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                       flex: 4,
                       child: CustomTextField(
                         controller: _priceController,
-                        label: 'Price (\$)',
-                        hint: '25.00',
-                        prefixIcon: Icons.attach_money_rounded,
+                        label: 'Price (ETB)',
+                        hint: '500.00',
+                        prefixIcon: Icons.account_balance_wallet_outlined,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         validator: (val) {
                           if (val == null || val.trim().isEmpty) {
@@ -454,7 +454,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 CustomTextField(
                   controller: _descriptionController,
                   label: 'Description',
-                  hint: 'Describe condition, course code, pickup location on campus, etc.',
+                  hint: 'Describe condition, brand, specs, meetup location in your community/neighborhood, etc.',
                   maxLines: 5,
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {

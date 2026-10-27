@@ -1,39 +1,39 @@
-# CampusConnect 🎓📱
+# CampusConnect 🌍📱
+**Ethiopia Community & Campus Marketplace**
 
-**CampusConnect** is a full-featured Flutter mobile application designed as a student-to-student marketplace with built-in real-time chat and a verified seller reputation system. Built with Flutter, Dart, Firebase, and Provider state management.
+**CampusConnect** is a full-featured Flutter marketplace application designed for **all communities, neighborhoods, and university campuses in Ethiopia**. It connects local buyers and sellers for safe, peer-to-peer commerce powered by **Telebirr**, **CBE / CBE Birr**, and **Cash on Meetup** in Ethiopian Birr (ETB).
 
 ---
 
 ## 🚀 Key Features
 
-1. **Student Authentication & Profiles (`/screens/auth`)**
-   - Email and password registration with client-side campus domain validation.
-   - Profile management with customizable avatar photo upload and display name.
+1. **Open Community Authentication & Profiles (`/screens/auth`)**
+   - Universal email registration for all community members (Gmail, Yahoo, Outlook, etc.).
+   - Profile management with photo avatars, phone numbers, and seller payout credentials (Telebirr & CBE account).
    - Password reset via email.
 
-2. **Marketplace Browsing & Search (`/screens/home`)**
-   - Grid view with pull-to-refresh (`RefreshIndicator`).
-   - Category filtering chips (Textbooks, Electronics, Furniture, Clothing, School Supplies, Housing, Services, Other).
-   - Fast keyword search via Firestore `searchKeywords` array.
-   - Infinite pagination with `limit(20)` and `startAfterDocument`.
+2. **All-Community Marketplace Browsing (`/screens/home`)**
+   - Category filtering: Electronics & Phones, Home & Furniture, Fashion & Clothing, Vehicles & Auto, Property & Rentals, Services & Skills, Books & Education, Jobs & Gigs, Free & Donations.
+   - Fast keyword search across titles and descriptions.
+   - Real-time updates with pull-to-refresh and infinite pagination.
 
-3. **Listing Details & Management (`/screens/listing`)**
-   - Multi-image carousel with page indicator dots.
-   - Seller reputation summary card with live average rating and review counts.
-   - Direct "Chat with Seller" and "Rate Seller" action buttons.
-   - Multi-image picker with camera and gallery support, pre-compressing images to `maxWidth: 1024` and `quality: 80%`.
-   - "My Listings" dashboard to mark items as sold, edit listings, or delete items and their cloud storage assets.
+3. **Item Creation & Management (`/screens/listing`)**
+   - Listings priced in Ethiopian Birr (`ETB`).
+   - Multi-image upload with client-side compression.
+   - P2P meetup suggestions for local public spots (cafés, malls, banks, campus gates).
 
 4. **1-on-1 Real-Time Chat (`/screens/chat`)**
-   - Deterministic chat ID creation (`sorted(uidA + "_" + uidB)`), guaranteeing a single thread between any two campus peers.
-   - Real-time message streaming using Firestore `snapshots()`.
-   - Unread message counters and read receipt status checkmarks.
-   - Built-in public meeting safety recommendations for student exchanges.
+   - Real-time messaging using Firestore snapshots.
+   - Unread message counters, read receipts, and safety recommendations.
 
-5. **Verified Seller Reputation System (`/screens/rating`)**
-   - 5-star interactive rating with written comments.
-   - Anti-fraud rule: Rating a seller requires an existing chat history.
-   - Atomic Firestore transactions updating the seller's aggregate score and total review counter.
+5. **Real Ethiopian Payment Verification (`/screens/order`)**
+   - Integrated with **Telebirr (`*127#`)**, **CBE / CBE Birr (`*847#`)**, and **Cash**.
+   - Two-way bank SMS reference verification (Telebirr 127 SMS / CBE transaction ID matching).
+   - Seller 1-tap payment confirmation and dispute flags with instant email notifications.
+
+6. **Verified Seller Reputation System (`/screens/rating`)**
+   - 5-star interactive ratings and written reviews from real transaction partners.
+   - Dynamic seller reputation calculation.
 
 ---
 

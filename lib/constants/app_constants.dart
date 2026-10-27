@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppConstants {
   static const String appName = 'CampusConnect';
+  static const String appTagline = 'Ethiopia Community Marketplace';
 
   // Ethiopian Currency Constants
   static const String currencyCode = 'ETB';
@@ -21,21 +22,45 @@ class AppConstants {
   ];
 
   // Primary Theme Colors
-  static const Color primaryColor = Color(0xFF1E3A8A); // Collegiate Navy
+  static const Color primaryColor = Color(0xFF1E3A8A); // Royal Navy
   static const Color secondaryColor = Color(0xFFF59E0B); // Amber Accent
   static const Color backgroundColor = Color(0xFFF8FAFC);
   static const Color cardColor = Colors.white;
 
-  // Marketplace Categories
+  // Ethiopian Community Locations
+  static const List<String> communityLocations = [
+    'Addis Ababa - Bole',
+    'Addis Ababa - CMC / Ayat',
+    'Addis Ababa - Piassa / Arada',
+    'Addis Ababa - Kazanchis',
+    'Addis Ababa - Sarbet / Mekanisa',
+    'Addis Ababa - Megenagna',
+    'Addis Ababa - Lebu / Jemo',
+    'Addis Ababa - 4 Kilo / 5 Kilo / 6 Kilo',
+    'Hawassa',
+    'Adama (Nazret)',
+    'Bahir Dar',
+    'Dire Dawa',
+    'Jimma',
+    'Mekelle',
+    'Bishoftu (Debre Zeyit)',
+    'Gondar',
+    'University / College Campus',
+    'Other Community',
+  ];
+
+  // All-Community Marketplace Categories
   static const List<String> categories = [
     'All',
-    'Textbooks',
-    'Electronics',
-    'Furniture',
-    'Clothing',
-    'School Supplies',
-    'Housing',
-    'Services',
+    'Electronics & Phones',
+    'Home & Furniture',
+    'Fashion & Clothing',
+    'Vehicles & Auto',
+    'Property & Rentals',
+    'Services & Skills',
+    'Books & Education',
+    'Jobs & Gigs',
+    'Free & Donations',
     'Other',
   ];
 }

@@ -60,7 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       appBar: AppBar(
-        title: const Text('Create Student Account'),
+        title: const Text('Create Account'),
         backgroundColor: Colors.transparent,
         foregroundColor: AppConstants.primaryColor,
         elevation: 0,
@@ -75,7 +75,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text(
-                    'Join CampusConnect',
+                    'Join the Community',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -84,7 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Trade textbook, tech, dorm essentials with your campus peers',
+                    'Buy, sell, and connect safely with all local communities in Ethiopia',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],
@@ -96,7 +96,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   CustomTextField(
                     controller: _nameController,
                     label: 'Full Name',
-                    hint: 'e.g. Alex Johnson',
+                    hint: 'e.g. Abebe Bikila',
                     prefixIcon: Icons.person_outline_rounded,
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
@@ -113,8 +113,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // Email
                   CustomTextField(
                     controller: _emailController,
-                    label: 'Campus Email',
-                    hint: 'student@university.edu',
+                    label: 'Email Address',
+                    hint: 'you@email.com (Gmail, Yahoo, Outlook)',
                     prefixIcon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     validator: (val) {
@@ -122,7 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         return 'Email is required';
                       }
                       if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val.trim())) {
-                        return 'Enter a valid student email address';
+                        return 'Enter a valid email address';
                       }
                       return null;
                     },
