@@ -30,6 +30,8 @@ class ChatModel {
   final String lastMessage;
   final DateTime lastMessageAt;
   final Map<String, ParticipantInfo> participants;
+  final String? lastSenderId;
+  final bool lastMessageRead;
 
   ChatModel({
     required this.id,
@@ -37,7 +39,16 @@ class ChatModel {
     required this.lastMessage,
     required this.lastMessageAt,
     required this.participants,
+    this.lastSenderId,
+    this.lastMessageRead = true,
   });
+
+  bool hasUnread(String currentUserId) {
+    return lastSenderId != null &&
+        lastSenderId != currentUserId &&
+        !lastMessageRead &&
+        lastMessage.isNotEmpty;
+  }
 
   static String getChatId(String uidA, String uidB) {
     final list = [uidA, uidB]..sort();
@@ -71,6 +82,8 @@ class ChatModel {
       lastMessage: data['lastMessage'] as String? ?? '',
       lastMessageAt: (data['lastMessageAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       participants: participantsMap,
+      lastSenderId: data['lastSenderId'] as String?,
+      lastMessageRead: data['lastMessageRead'] as bool? ?? true,
     );
   }
 
@@ -80,6 +93,8 @@ class ChatModel {
       'lastMessage': lastMessage,
       'lastMessageAt': Timestamp.fromDate(lastMessageAt),
       'participants': participants.map((key, value) => MapEntry(key, value.toMap())),
+      'lastSenderId': lastSenderId,
+      'lastMessageRead': lastMessageRead,
     };
   }
 }

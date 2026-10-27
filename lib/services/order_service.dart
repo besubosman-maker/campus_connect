@@ -172,6 +172,7 @@ class OrderService {
     final Map<String, dynamic> updates = {
       'transactionRef': transactionRef.trim(),
       'paymentStatus': 'proof_submitted',
+      'disputeReason': null,
       'paidAt': Timestamp.now(),
       'updatedAt': Timestamp.now(),
     };
@@ -224,8 +225,13 @@ class OrderService {
 
   /// Seller reports payment was not received (e.g. incorrect reference or no SMS arrived).
   Future<void> disputePayment(OrderModel order, {String? reason}) async {
+    final finalReason = (reason != null && reason.trim().isNotEmpty)
+        ? reason.trim()
+        : 'Payment not found in SMS or bank account';
+
     await _ordersRef.doc(order.id).update({
       'paymentStatus': 'disputed',
+      'disputeReason': finalReason,
       'updatedAt': Timestamp.now(),
     });
 
@@ -237,8 +243,8 @@ class OrderService {
         subject: '[CampusConnect] Payment Not Received: "${order.listingTitle}"',
         message: 'Hi ${order.buyerName},\n\n'
             '${order.sellerName} was unable to confirm your payment with the provided transaction reference (${order.transactionRef ?? "None"}).\n\n'
-            'Reason: ${reason ?? "SMS confirmation not found on seller phone"}\n\n'
-            'Please double check your Telebirr (127) or CBE transaction message and submit the correct reference.',
+            'Seller Report: $finalReason\n\n'
+            'Please double check your Telebirr (127) or CBE transaction message and submit the correct reference in the app.',
       ).catchError((e) => false);
     }
   }

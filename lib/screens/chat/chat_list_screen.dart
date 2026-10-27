@@ -36,7 +36,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       appBar: AppBar(
-        title: const Text('Campus Messages'),
+        title: const Text('Messages & Chats'),
       ),
       body: StreamBuilder<List<ChatModel>>(
         stream: _chatService.getUserChatsStream(currentUser.uid),
@@ -152,7 +152,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               margin: const EdgeInsets.only(left: 8),
                               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                               decoration: BoxDecoration(
-                                color: AppConstants.primaryColor,
+                                color: Colors.redAccent,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(

@@ -674,6 +674,94 @@ class _OrdersScreenState extends State<OrdersScreen>
               ),
             ],
 
+            // SELLER DISPUTE REPORT BANNER (Buyer & Seller see the exact report text)
+            if (order.isPaymentDisputed) ...[
+              Container(
+                margin: const EdgeInsets.only(top: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.red.shade400, width: 1.5),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.report_problem_rounded, color: Colors.red.shade700, size: 22),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            isBuyer
+                                ? 'Payment Reported: Not Received (ክፍያ አልተገኘም)'
+                                : 'You Reported: Payment Not Received',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.red.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.speaker_notes_outlined, size: 14, color: Colors.red.shade700),
+                              const SizedBox(width: 5),
+                              Text(
+                                isBuyer ? "Seller's Report / Reason:" : "Your Report Note:",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: Colors.red.shade900,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            order.disputeReason != null && order.disputeReason!.trim().isNotEmpty
+                                ? order.disputeReason!
+                                : 'Payment could not be verified in SMS inbox. Please check your transaction reference.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.red.shade900,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (isBuyer) ...[
+                      Text(
+                        '💡 Please check your Telebirr (127) or CBE transaction message. If the code was wrong, tap "Re-Submit Proof" below to send the correct transaction ID or message the seller.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                      ),
+                    ] else ...[
+                      Text(
+                        'The buyer can see your report above and has been notified to re-submit the correct transaction message.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+
             // VERIFIED CONFIRMATION BANNER
             if (order.isPaymentVerified) ...[
               Container(
@@ -690,7 +778,7 @@ class _OrdersScreenState extends State<OrdersScreen>
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Payment Verified by Seller (${order.paymentMethod})! Ready for campus handshake meetup.',
+                        'Payment Verified by Seller (${order.paymentMethod})! Ready for handshake meetup.',
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.green.shade900),
                       ),
                     ),
@@ -710,18 +798,24 @@ class _OrdersScreenState extends State<OrdersScreen>
                 if (isBuyer && !order.isPaymentVerified) ...[
                   ElevatedButton.icon(
                     icon: Icon(
-                      order.paymentMethod.contains('Telebirr')
-                          ? Icons.phone_android
-                          : (order.paymentMethod.contains('CBE') ? Icons.account_balance : Icons.payments_outlined),
+                      order.isPaymentDisputed
+                          ? Icons.refresh_rounded
+                          : (order.paymentMethod.contains('Telebirr')
+                              ? Icons.phone_android
+                              : (order.paymentMethod.contains('CBE') ? Icons.account_balance : Icons.payments_outlined)),
                       size: 15,
                     ),
                     label: Text(
-                      order.isPaymentProofSubmitted ? 'Update Proof' : 'Pay & Verify (ክፍያ)',
+                      order.isPaymentDisputed
+                          ? 'Re-Submit Proof (እንደገና ላክ)'
+                          : (order.isPaymentProofSubmitted ? 'Update Proof' : 'Pay & Verify (ክፍያ)'),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: order.paymentMethod.contains('Telebirr')
-                          ? Colors.blue.shade700
-                          : (order.paymentMethod.contains('CBE') ? Colors.purple.shade700 : Colors.teal.shade700),
+                      backgroundColor: order.isPaymentDisputed
+                          ? Colors.red.shade700
+                          : (order.paymentMethod.contains('Telebirr')
+                              ? Colors.blue.shade700
+                              : (order.paymentMethod.contains('CBE') ? Colors.purple.shade700 : Colors.teal.shade700)),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       visualDensity: VisualDensity.compact,
@@ -749,21 +843,67 @@ class _OrdersScreenState extends State<OrdersScreen>
                   ),
                 ),
 
-                // 3. Chat Button
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
-                  label: const Text('Chat'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.teal,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    visualDensity: VisualDensity.compact,
+                // 3. Chat Button with Real-Time "New Message" Symbol / Badge
+                StreamBuilder<bool>(
+                  stream: _chatService.hasUnreadMessageStream(
+                    currentUserId: isBuyer ? order.buyerId : order.sellerId,
+                    otherUserId: isBuyer ? order.sellerId : order.buyerId,
                   ),
-                  onPressed: () async {
-                    final targetUid = isBuyer ? order.sellerId : order.buyerId;
-                    final targetUser = await _authService.getUserProfile(targetUid);
-                    if (targetUser != null && mounted) {
-                      _openChatWithUser(targetUser);
-                    }
+                  builder: (context, unreadSnapshot) {
+                    final hasNewMessage = unreadSnapshot.data ?? false;
+                    return OutlinedButton.icon(
+                      icon: Badge(
+                        isLabelVisible: hasNewMessage,
+                        backgroundColor: Colors.redAccent,
+                        smallSize: 9,
+                        child: Icon(
+                          hasNewMessage ? Icons.mark_chat_unread_rounded : Icons.chat_bubble_outline_rounded,
+                          size: 16,
+                          color: hasNewMessage ? Colors.redAccent : Colors.teal,
+                        ),
+                      ),
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Chat'),
+                          if (hasNewMessage) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'NEW',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: hasNewMessage ? Colors.redAccent : Colors.teal,
+                        side: BorderSide(
+                          color: hasNewMessage ? Colors.redAccent : Colors.teal.shade300,
+                          width: hasNewMessage ? 1.5 : 1.0,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      onPressed: () async {
+                        final targetUid = isBuyer ? order.sellerId : order.buyerId;
+                        final targetUser = await _authService.getUserProfile(targetUid);
+                        if (targetUser != null && mounted) {
+                          _openChatWithUser(targetUser);
+                        }
+                      },
+                    );
                   },
                 ),
 
@@ -955,54 +1095,104 @@ class _OrdersScreenState extends State<OrdersScreen>
 
   void _confirmDisputePayment(OrderModel order) {
     final reasonController = TextEditingController();
+    final defaultReasons = [
+      'No SMS arrived from 127 (Telebirr)',
+      'Transaction reference not found in account',
+      'Amount received does not match price',
+      'Sent to wrong account number',
+    ];
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 26),
-            SizedBox(width: 8),
-            Text('Payment Not Received'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Report that you have checked your SMS and this transaction was not found:',
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.red, size: 26),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Report Payment Issue (ክፍያ አልተገኘም)',
+                    style: TextStyle(fontSize: 17),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: reasonController,
-              decoration: const InputDecoration(
-                hintText: 'e.g. Transaction number not found in my Telebirr SMS',
-                isDense: true,
-                border: OutlineInputBorder(),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Select or type a reason why payment could not be confirmed. The buyer will see this report text in the app:',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Quick Reasons:',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: defaultReasons.map((reason) {
+                      return ActionChip(
+                        label: Text(reason, style: const TextStyle(fontSize: 11)),
+                        backgroundColor: Colors.grey.shade100,
+                        onPressed: () {
+                          setDialogState(() {
+                            reasonController.text = reason;
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: reasonController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Seller Report Note for Buyer',
+                      hintText: 'e.g. Checked my Telebirr SMS and no money arrived with this reference code...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await _orderService.disputePayment(order, reason: reasonController.text.trim());
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Dispute recorded. Buyer notified to check their transaction message.')),
-                );
-              }
-            },
-            child: const Text('Report Dispute'),
-          ),
-        ],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade700,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () async {
+                  final text = reasonController.text.trim();
+                  final messenger = ScaffoldMessenger.of(context);
+                  Navigator.pop(ctx);
+                  await _orderService.disputePayment(
+                    order,
+                    reason: text.isNotEmpty ? text : 'Payment SMS not received in seller account',
+                  );
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Dispute reported! Buyer can now view your report note in the app.'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                },
+                child: const Text('Send Report to Buyer'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

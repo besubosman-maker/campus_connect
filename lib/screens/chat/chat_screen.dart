@@ -177,6 +177,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
                 final messages = snapshot.data ?? [];
 
+                if (snapshot.hasData && messages.isNotEmpty) {
+                  final hasUnread = messages.any((m) => !m.read && m.senderId != currentUserId);
+                  if (hasUnread) {
+                    _markRead();
+                  }
+                }
+
                 if (messages.isEmpty) {
                   return Center(
                     child: Padding(

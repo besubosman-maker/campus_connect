@@ -1158,14 +1158,51 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        // Chat Button
+                        // Chat Button with New Message Symbol / Badge
                         Expanded(
                           flex: 4,
-                          child: CustomButton(
-                            text: 'Chat',
-                            icon: Icons.chat_bubble_outline_rounded,
-                            isOutlined: true,
-                            onPressed: _onChatPressed,
+                          child: StreamBuilder<bool>(
+                            stream: auth.userModel != null && _seller != null
+                                ? _chatService.hasUnreadMessageStream(
+                                    currentUserId: auth.userModel!.uid,
+                                    otherUserId: _seller!.uid,
+                                  )
+                                : Stream.value(false),
+                            builder: (context, unreadSnapshot) {
+                              final hasNew = unreadSnapshot.data ?? false;
+                              return OutlinedButton.icon(
+                                icon: Badge(
+                                  isLabelVisible: hasNew,
+                                  backgroundColor: Colors.redAccent,
+                                  smallSize: 8,
+                                  child: Icon(
+                                    hasNew
+                                        ? Icons.mark_chat_unread_rounded
+                                        : Icons.chat_bubble_outline_rounded,
+                                    size: 16,
+                                    color: hasNew ? Colors.redAccent : AppConstants.primaryColor,
+                                  ),
+                                ),
+                                label: Text(
+                                  hasNew ? 'Chat (New)' : 'Chat',
+                                  style: TextStyle(
+                                    color: hasNew ? Colors.redAccent : AppConstants.primaryColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: hasNew ? Colors.redAccent : AppConstants.primaryColor,
+                                    width: hasNew ? 1.5 : 1.0,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  minimumSize: const Size(0, 48),
+                                ),
+                                onPressed: _onChatPressed,
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(width: 8),

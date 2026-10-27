@@ -100,6 +100,8 @@ class ChatService {
     batch.update(chatDocRef, {
       'lastMessage': cleanText,
       'lastMessageAt': FieldValue.serverTimestamp(),
+      'lastSenderId': senderId,
+      'lastMessageRead': false,
     });
 
     await batch.commit();
@@ -127,12 +129,48 @@ class ChatService {
         }
       }
 
+      // Also update parent chat doc read status
+      final chatDoc = await _chatsRef.doc(chatId).get();
+      if (chatDoc.exists) {
+        final data = chatDoc.data() as Map<String, dynamic>?;
+        if (data != null && data['lastSenderId'] != currentUserId && (data['lastMessageRead'] == false)) {
+          batch.update(_chatsRef.doc(chatId), {'lastMessageRead': true});
+          hasUpdates = true;
+        }
+      }
+
       if (hasUpdates) {
         await batch.commit();
       }
     } catch (e) {
       debugPrint('Error marking messages as read: $e');
     }
+  }
+
+  /// Real-time stream checking whether there are unread messages from otherUser to currentUser.
+  Stream<bool> hasUnreadMessageStream({
+    required String currentUserId,
+    required String otherUserId,
+  }) {
+    final chatId = getChatId(currentUserId, otherUserId);
+    return _chatsRef.doc(chatId).snapshots().map((doc) {
+      if (!doc.exists) return false;
+      final data = doc.data() as Map<String, dynamic>? ?? {};
+      final lastSenderId = data['lastSenderId'] as String?;
+      final lastMessageRead = data['lastMessageRead'] as bool? ?? true;
+      final lastMessage = data['lastMessage'] as String? ?? '';
+      return lastSenderId != null &&
+          lastSenderId != currentUserId &&
+          !lastMessageRead &&
+          lastMessage.isNotEmpty;
+    });
+  }
+
+  /// Real-time stream of the total count of unread chats for currentUser.
+  Stream<int> getUnreadChatsCountStream(String currentUserId) {
+    return getUserChatsStream(currentUserId).map((chats) {
+      return chats.where((c) => c.hasUnread(currentUserId)).length;
+    });
   }
 
   /// Check whether a chat exists between two users.

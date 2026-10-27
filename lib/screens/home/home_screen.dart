@@ -12,6 +12,7 @@ import '../listing/listing_detail_screen.dart';
 import '../listing/my_listings_screen.dart';
 import '../order/orders_screen.dart';
 import '../profile/profile_screen.dart';
+import '../../services/chat_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentTabIndex = 0;
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ChatService _chatService = ChatService();
 
   @override
   void initState() {
@@ -58,44 +60,65 @@ class _HomeScreenState extends State<HomeScreen> {
       const ProfileScreen(),
     ];
 
+    final auth = Provider.of<AuthProvider>(context);
+    final currentUserId = auth.userModel?.uid;
+
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       body: IndexedStack(
         index: _currentTabIndex,
         children: pages,
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentTabIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentTabIndex = index;
-          });
+      bottomNavigationBar: StreamBuilder<int>(
+        stream: currentUserId != null
+            ? _chatService.getUnreadChatsCountStream(currentUserId)
+            : Stream.value(0),
+        builder: (context, unreadSnapshot) {
+          final unreadCount = unreadSnapshot.data ?? 0;
+          return NavigationBar(
+            selectedIndex: _currentTabIndex,
+            onDestinationSelected: (index) {
+              setState(() {
+                _currentTabIndex = index;
+              });
+            },
+            backgroundColor: Colors.white,
+            elevation: 4,
+            indicatorColor: AppConstants.primaryColor.withOpacity(0.15),
+            destinations: [
+              const NavigationDestination(
+                icon: Icon(Icons.storefront_outlined),
+                selectedIcon: Icon(Icons.storefront, color: AppConstants.primaryColor),
+                label: 'Browse',
+              ),
+              NavigationDestination(
+                icon: Badge(
+                  isLabelVisible: unreadCount > 0,
+                  label: Text('$unreadCount'),
+                  backgroundColor: Colors.redAccent,
+                  child: const Icon(Icons.chat_bubble_outline_rounded),
+                ),
+                selectedIcon: Badge(
+                  isLabelVisible: unreadCount > 0,
+                  label: Text('$unreadCount'),
+                  backgroundColor: Colors.redAccent,
+                  child: const Icon(Icons.chat_bubble_rounded, color: AppConstants.primaryColor),
+                ),
+                label: 'Chats',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.inventory_2_outlined),
+                selectedIcon: Icon(Icons.inventory_2_rounded, color: AppConstants.primaryColor),
+                label: 'My Listings',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.person_outline_rounded),
+                selectedIcon: Icon(Icons.person_rounded, color: AppConstants.primaryColor),
+                label: 'Profile',
+              ),
+            ],
+          );
         },
-        backgroundColor: Colors.white,
-        elevation: 4,
-        indicatorColor: AppConstants.primaryColor.withOpacity(0.15),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.storefront_outlined),
-            selectedIcon: Icon(Icons.storefront, color: AppConstants.primaryColor),
-            label: 'Browse',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline_rounded),
-            selectedIcon: Icon(Icons.chat_bubble_rounded, color: AppConstants.primaryColor),
-            label: 'Chats',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined),
-            selectedIcon: Icon(Icons.inventory_2_rounded, color: AppConstants.primaryColor),
-            label: 'My Listings',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded, color: AppConstants.primaryColor),
-            label: 'Profile',
-          ),
-        ],
       ),
       floatingActionButton: _currentTabIndex == 0
           ? FloatingActionButton.extended(

@@ -19,6 +19,7 @@ class OrderModel {
   final String? paymentDetails; // seller's telebirr number or CBE account
   final String? transactionRef; // Telebirr or CBE confirmation SMS reference
   final String paymentStatus; // 'unpaid', 'proof_submitted', 'verified', 'disputed'
+  final String? disputeReason; // Seller's report reason when payment is disputed
   final String? paymentProofImage; // screenshot of Telebirr/CBE SMS
   final DateTime? paidAt;
   final DateTime? verifiedAt;
@@ -45,6 +46,7 @@ class OrderModel {
     this.paymentDetails,
     this.transactionRef,
     this.paymentStatus = 'unpaid',
+    this.disputeReason,
     this.paymentProofImage,
     this.paidAt,
     this.verifiedAt,
@@ -83,6 +85,7 @@ class OrderModel {
       paymentDetails: data['paymentDetails'] as String?,
       transactionRef: data['transactionRef'] as String?,
       paymentStatus: data['paymentStatus'] as String? ?? 'unpaid',
+      disputeReason: data['disputeReason'] as String?,
       paymentProofImage: data['paymentProofImage'] as String?,
       paidAt: (data['paidAt'] as Timestamp?)?.toDate(),
       verifiedAt: (data['verifiedAt'] as Timestamp?)?.toDate(),
@@ -111,6 +114,7 @@ class OrderModel {
       'paymentDetails': paymentDetails,
       'transactionRef': transactionRef,
       'paymentStatus': paymentStatus,
+      'disputeReason': disputeReason,
       'paymentProofImage': paymentProofImage,
       'paidAt': paidAt != null ? Timestamp.fromDate(paidAt!) : null,
       'verifiedAt': verifiedAt != null ? Timestamp.fromDate(verifiedAt!) : null,
@@ -139,6 +143,7 @@ class OrderModel {
     String? paymentDetails,
     String? transactionRef,
     String? paymentStatus,
+    String? disputeReason,
     String? paymentProofImage,
     DateTime? paidAt,
     DateTime? verifiedAt,
@@ -165,6 +170,7 @@ class OrderModel {
       paymentDetails: paymentDetails ?? this.paymentDetails,
       transactionRef: transactionRef ?? this.transactionRef,
       paymentStatus: paymentStatus ?? this.paymentStatus,
+      disputeReason: disputeReason ?? this.disputeReason,
       paymentProofImage: paymentProofImage ?? this.paymentProofImage,
       paidAt: paidAt ?? this.paidAt,
       verifiedAt: verifiedAt ?? this.verifiedAt,
