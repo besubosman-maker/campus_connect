@@ -1,0 +1,28 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isImageFile() {
+      return request.resource.contentType.matches('image/.*') &&
+             request.resource.size < 5 * 1024 * 1024; // 5 MB max
+    }
+
+    // Profile photos: /profiles/{userId}.jpg
+    match /profiles/{userId}.jpg {
+      allow read: if true;
+      allow write: if isAuthenticated() && request.auth.uid == userId && isImageFile();
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Listing photos: /listings/{listingId}/{fileName}
+    match /listings/{listingId}/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isImageFile();
+      allow delete: if isAuthenticated();
+    }
+  }
+}
