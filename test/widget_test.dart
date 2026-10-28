@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:campus_connect/constants/app_constants.dart';
+import 'package:campus_connect/models/user_model.dart';
+import 'package:campus_connect/providers/theme_provider.dart';
 import 'package:campus_connect/widgets/rating_stars.dart';
 
 void main() {
@@ -32,5 +34,35 @@ void main() {
     expect(AppConstants.ethiopianPaymentMethods, contains(AppConstants.paymentChapa));
     expect(AppConstants.ethiopianPaymentMethods, contains(AppConstants.paymentTelebirr));
     expect(AppConstants.ethiopianPaymentMethods, contains(AppConstants.paymentCBE));
+  });
+
+  test('UserModel recognizes super_admin role and admin permissions', () {
+    final superUser = UserModel(
+      uid: 'super-123',
+      name: 'Besufikad Osman',
+      email: 'besubosman@gmail.com',
+      joinedAt: DateTime.now(),
+      role: 'super_admin',
+    );
+
+    expect(superUser.isSuperAdmin, isTrue);
+    expect(superUser.isAdmin, isTrue);
+
+    final normalUser = UserModel(
+      uid: 'user-456',
+      name: 'Community Buyer',
+      email: 'buyer@test.et',
+      joinedAt: DateTime.now(),
+      role: 'user',
+    );
+
+    expect(normalUser.isSuperAdmin, isFalse);
+    expect(normalUser.isAdmin, isFalse);
+  });
+
+  test('ThemeProvider provides lightTheme and darkTheme configurations', () {
+    expect(ThemeProvider.lightTheme.brightness, Brightness.light);
+    expect(ThemeProvider.darkTheme.brightness, Brightness.dark);
+    expect(ThemeProvider.darkTheme.scaffoldBackgroundColor, const Color(0xFF0F172A));
   });
 }

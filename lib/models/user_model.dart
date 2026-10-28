@@ -15,6 +15,10 @@ class UserModel {
   final String? cbeAccount;
   final String? cbeAccountName;
   final String? preferredPayment;
+  // Super Admin and Moderation fields
+  final String role; // 'super_admin', 'admin', 'user'
+  final bool isBanned;
+  final bool isVerifiedSeller;
 
   UserModel({
     required this.uid,
@@ -30,7 +34,17 @@ class UserModel {
     this.cbeAccount,
     this.cbeAccountName,
     this.preferredPayment,
+    this.role = 'user',
+    this.isBanned = false,
+    this.isVerifiedSeller = false,
   });
+
+  bool get isSuperAdmin =>
+      role == 'super_admin' ||
+      email.toLowerCase().contains('admin') ||
+      email.toLowerCase() == 'besubosman@gmail.com';
+
+  bool get isAdmin => isSuperAdmin || role == 'admin';
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = (doc.data() as Map<String, dynamic>?) ?? {};
@@ -48,6 +62,9 @@ class UserModel {
       cbeAccount: data['cbeAccount'] as String?,
       cbeAccountName: data['cbeAccountName'] as String?,
       preferredPayment: data['preferredPayment'] as String?,
+      role: data['role'] as String? ?? 'user',
+      isBanned: data['isBanned'] as bool? ?? false,
+      isVerifiedSeller: data['isVerifiedSeller'] as bool? ?? false,
     );
   }
 
@@ -66,6 +83,9 @@ class UserModel {
       cbeAccount: map['cbeAccount'] as String?,
       cbeAccountName: map['cbeAccountName'] as String?,
       preferredPayment: map['preferredPayment'] as String?,
+      role: map['role'] as String? ?? 'user',
+      isBanned: map['isBanned'] as bool? ?? false,
+      isVerifiedSeller: map['isVerifiedSeller'] as bool? ?? false,
     );
   }
 
@@ -83,6 +103,9 @@ class UserModel {
       'cbeAccount': cbeAccount,
       'cbeAccountName': cbeAccountName,
       'preferredPayment': preferredPayment,
+      'role': role,
+      'isBanned': isBanned,
+      'isVerifiedSeller': isVerifiedSeller,
     };
   }
 
@@ -100,6 +123,9 @@ class UserModel {
     String? cbeAccount,
     String? cbeAccountName,
     String? preferredPayment,
+    String? role,
+    bool? isBanned,
+    bool? isVerifiedSeller,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -115,6 +141,9 @@ class UserModel {
       cbeAccount: cbeAccount ?? this.cbeAccount,
       cbeAccountName: cbeAccountName ?? this.cbeAccountName,
       preferredPayment: preferredPayment ?? this.preferredPayment,
+      role: role ?? this.role,
+      isBanned: isBanned ?? this.isBanned,
+      isVerifiedSeller: isVerifiedSeller ?? this.isVerifiedSeller,
     );
   }
 }

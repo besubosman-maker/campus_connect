@@ -13,6 +13,9 @@ import '../listing/my_listings_screen.dart';
 import '../order/orders_screen.dart';
 import '../profile/profile_screen.dart';
 import '../../services/chat_service.dart';
+import '../../services/admin_service.dart';
+import '../../providers/theme_provider.dart';
+import '../admin/admin_dashboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -64,7 +67,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final currentUserId = auth.userModel?.uid;
 
     return Scaffold(
-      backgroundColor: AppConstants.backgroundColor,
       body: IndexedStack(
         index: _currentTabIndex,
         children: pages,
@@ -82,7 +84,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 _currentTabIndex = index;
               });
             },
-            backgroundColor: Colors.white,
             elevation: 4,
             indicatorColor: AppConstants.primaryColor.withOpacity(0.15),
             destinations: [
@@ -142,10 +143,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBrowseTab() {
     return Consumer<ListingProvider>(
       builder: (context, listingProvider, _) {
+        final cardColor = Theme.of(context).cardTheme.color ?? Colors.white;
+
         return Scaffold(
-          backgroundColor: AppConstants.backgroundColor,
           appBar: AppBar(
-            backgroundColor: Colors.white,
             elevation: 0.5,
             titleSpacing: 16,
             title: Row(
@@ -184,6 +185,37 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             actions: [
+              Consumer<ThemeProvider>(
+                builder: (context, themeProvider, _) {
+                  final isDark = themeProvider.isCurrentDark(context);
+                  return IconButton(
+                    icon: Icon(
+                      isDark ? Icons.light_mode_rounded : Icons.dark_mode_outlined,
+                      color: isDark ? Colors.amber : AppConstants.primaryColor,
+                    ),
+                    tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                    onPressed: () => themeProvider.toggleTheme(),
+                  );
+                },
+              ),
+              Consumer<AuthProvider>(
+                builder: (context, auth, _) {
+                  final user = auth.userModel;
+                  if (user != null && user.isAdmin) {
+                    return IconButton(
+                      icon: const Icon(Icons.shield_rounded, color: Colors.amber),
+                      tooltip: 'Super Admin Dashboard',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+                        );
+                      },
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.receipt_long_outlined, color: AppConstants.primaryColor),
                 tooltip: 'My Orders & Sales',
@@ -194,22 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
-              Consumer<AuthProvider>(
-                builder: (context, auth, _) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 16.0),
-                    child: Center(
-                      child: Text(
-                        auth.userModel?.name.split(' ').first ?? '',
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+              const SizedBox(width: 6),
             ],
           ),
           body: RefreshIndicator(
@@ -218,13 +235,51 @@ class _HomeScreenState extends State<HomeScreen> {
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
+                // Platform Announcement Banner if published
+                StreamBuilder<Map<String, dynamic>?>(
+                  stream: AdminService().getAnnouncementStream(),
+                  builder: (context, snap) {
+                    final announcement = snap.data;
+                    if (announcement != null && announcement['isActive'] == true) {
+                      return SliverToBoxAdapter(
+                        child: Container(
+                          margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.amber.shade300),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.campaign_rounded, color: Colors.amber, size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  announcement['message'] ?? '',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.amber.shade900,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
+                  },
+                ),
+
                 // Search Bar Section
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: cardColor,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -277,11 +332,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           selected: isSelected,
                           selectedColor: AppConstants.primaryColor,
                           labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black87,
+                            color: isSelected ? Colors.white : (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black87),
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                             fontSize: 13,
                           ),
-                          backgroundColor: Colors.white,
+                          backgroundColor: cardColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                             side: BorderSide(
