@@ -27,4 +27,10 @@ void main() {
     expect(AppConstants.categories, contains('Books & Education'));
     expect(AppConstants.categories, contains('Vehicles & Auto'));
   });
+
+  test('AppConstants payment methods includes Chapa API', () {
+    expect(AppConstants.ethiopianPaymentMethods, contains(AppConstants.paymentChapa));
+    expect(AppConstants.ethiopianPaymentMethods, contains(AppConstants.paymentTelebirr));
+    expect(AppConstants.ethiopianPaymentMethods, contains(AppConstants.paymentCBE));
+  });
 }

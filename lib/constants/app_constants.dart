@@ -9,12 +9,14 @@ class AppConstants {
   static const String currencySymbol = 'ETB ';
 
   // Ethiopian Payment Methods
+  static const String paymentChapa = 'Chapa Online API (Telebirr / CBE / Cards)';
   static const String paymentTelebirr = 'Telebirr (ቴሌብር)';
   static const String paymentCBE = 'CBE / CBE Birr (ንግድ ባንክ)';
   static const String paymentCash = 'Cash on Meetup (በእጅ ጥሬ ገንዘብ)';
   static const String paymentBOA = 'Bank of Abyssinia (አቢሲኒያ)';
 
   static const List<String> ethiopianPaymentMethods = [
+    paymentChapa,
     paymentTelebirr,
     paymentCBE,
     paymentCash,

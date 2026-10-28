@@ -15,6 +15,7 @@ import '../../services/chat_service.dart';
 import '../../services/email_service.dart';
 import '../../services/listing_service.dart';
 import '../../services/order_service.dart';
+import '../../services/chapa_service.dart';
 import '../../widgets/app_image_helper.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/loading_indicator.dart';
@@ -37,6 +38,7 @@ class _OrdersScreenState extends State<OrdersScreen>
   final AuthService _authService = AuthService();
   final ChatService _chatService = ChatService();
   final ListingService _listingService = ListingService();
+  final ChapaService _chapaService = ChapaService();
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -1233,6 +1235,9 @@ class _OrdersScreenState extends State<OrdersScreen>
     final refController = TextEditingController(text: order.transactionRef ?? '');
     String? proofBase64;
     bool isUploadingProof = false;
+    bool isInitializingChapa = false;
+    bool isVerifyingChapa = false;
+    String? chapaTxRef = order.transactionRef?.startsWith('chapa_') == true ? order.transactionRef : null;
 
     String? telebirr = order.paymentDetails;
     String? cbe = order.paymentDetails;
@@ -1261,19 +1266,27 @@ class _OrdersScreenState extends State<OrdersScreen>
           title: Row(
             children: [
               Icon(
-                order.paymentMethod.contains('Telebirr')
-                    ? Icons.phone_android
-                    : (order.paymentMethod.contains('CBE') ? Icons.account_balance : Icons.payments_outlined),
-                color: order.paymentMethod.contains('Telebirr')
-                    ? Colors.blue.shade800
-                    : (order.paymentMethod.contains('CBE') ? Colors.purple.shade800 : Colors.green.shade800),
+                order.paymentMethod.contains('Chapa')
+                    ? Icons.payment_rounded
+                    : (order.paymentMethod.contains('Telebirr')
+                        ? Icons.phone_android
+                        : (order.paymentMethod.contains('CBE') ? Icons.account_balance : Icons.payments_outlined)),
+                color: order.paymentMethod.contains('Chapa')
+                    ? Colors.teal.shade700
+                    : (order.paymentMethod.contains('Telebirr')
+                        ? Colors.blue.shade800
+                        : (order.paymentMethod.contains('CBE') ? Colors.purple.shade800 : Colors.green.shade800)),
               ),
               const SizedBox(width: 8),
-              Text(
-                order.paymentMethod.contains('Telebirr')
-                    ? 'Telebirr Payment'
-                    : (order.paymentMethod.contains('CBE') ? 'CBE Transfer' : 'Cash Details'),
-                style: const TextStyle(fontSize: 18),
+              Expanded(
+                child: Text(
+                  order.paymentMethod.contains('Chapa')
+                      ? 'Online Pay (Chapa API)'
+                      : (order.paymentMethod.contains('Telebirr')
+                          ? 'Telebirr Payment'
+                          : (order.paymentMethod.contains('CBE') ? 'CBE Transfer' : 'Payment Details')),
+                  style: const TextStyle(fontSize: 17),
+                ),
               ),
             ],
           ),
@@ -1287,6 +1300,179 @@ class _OrdersScreenState extends State<OrdersScreen>
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppConstants.primaryColor),
                 ),
                 const SizedBox(height: 12),
+
+                // AUTOMATED CHAPA API CHECKOUT CARD (FOR BUYER)
+                if (isBuyer) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.teal.shade50, Colors.teal.shade100.withOpacity(0.4)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.teal.shade400, width: 1.5),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.bolt_rounded, color: Colors.teal.shade800, size: 22),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Instant Online Pay (Chapa API)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: Colors.teal.shade900,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.teal.shade700,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'AUTOMATED',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Pay in-app with Telebirr, CBE Birr, Awash, or Card with automated instant verification.',
+                          style: TextStyle(fontSize: 11.5, color: Colors.teal.shade900),
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            icon: isInitializingChapa
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.payment_rounded, size: 16),
+                            label: Text(
+                              isInitializingChapa ? 'Opening Chapa Checkout...' : 'Pay with Chapa (ክፍያ ፈጽም)',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.teal.shade700,
+                              foregroundColor: Colors.white,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            onPressed: isInitializingChapa
+                                ? null
+                                : () async {
+                                    final auth = Provider.of<AuthProvider>(context, listen: false);
+                                    final buyer = auth.userModel;
+                                    if (buyer == null) return;
+                                    final messenger = ScaffoldMessenger.of(context);
+
+                                    setDialogState(() => isInitializingChapa = true);
+                                    final initResult = await _chapaService.initializePayment(
+                                      order: order,
+                                      buyer: buyer,
+                                    );
+                                    setDialogState(() => isInitializingChapa = false);
+
+                                    if (initResult.success && initResult.checkoutUrl != null) {
+                                      setDialogState(() {
+                                        chapaTxRef = initResult.txRef;
+                                        refController.text = initResult.txRef ?? '';
+                                      });
+                                      await _orderService.updateOrderPaymentRef(order.id, initResult.txRef!);
+                                      await ChapaService.openCheckout(initResult.checkoutUrl!);
+                                    } else {
+                                      messenger.showSnackBar(
+                                        SnackBar(
+                                          content: Text(initResult.errorMessage ?? 'Chapa connection failed'),
+                                          backgroundColor: Colors.redAccent,
+                                        ),
+                                      );
+                                    }
+                                  },
+                          ),
+                        ),
+                        if (chapaTxRef != null) ...[
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              icon: isVerifyingChapa
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.verified_outlined, size: 16),
+                              label: Text(isVerifyingChapa ? 'Verifying with Chapa...' : 'Verify Chapa Payment (አረጋግጥ)'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.teal.shade900,
+                                side: BorderSide(color: Colors.teal.shade700, width: 1.5),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              onPressed: isVerifyingChapa
+                                  ? null
+                                  : () async {
+                                      final messenger = ScaffoldMessenger.of(context);
+                                      setDialogState(() => isVerifyingChapa = true);
+                                      final verifyResult = await _chapaService.verifyPayment(chapaTxRef!);
+                                      setDialogState(() => isVerifyingChapa = false);
+
+                                      if (verifyResult.verified) {
+                                        await _orderService.verifyPayment(order);
+                                        if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                                        messenger.showSnackBar(
+                                          SnackBar(
+                                            content: Text(verifyResult.message ?? 'Payment verified successfully!'),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
+                                      } else {
+                                        messenger.showSnackBar(
+                                          SnackBar(
+                                            content: Text(verifyResult.message ?? 'Payment pending. Complete checkout in Chapa then try again.'),
+                                            backgroundColor: Colors.orange.shade800,
+                                          ),
+                                        );
+                                      }
+                                    },
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text(
+                          'OR DIRECT P2P TRANSFER (በእጅ/USSD)',
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
+                        ),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                ],
                 if (order.paymentMethod.contains('Telebirr')) ...[
                   Container(
                     padding: const EdgeInsets.all(12),

@@ -411,7 +411,28 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     const SizedBox(height: 10),
 
                     // Dynamic payment guidance card
-                    if (selectedPayment.contains('Telebirr')) ...[
+                    if (selectedPayment.contains('Chapa')) ...[
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.teal.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.teal.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.payment, color: Colors.teal.shade800, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Automated API Checkout: Pay in-app securely with Telebirr, CBE Birr, Awash, or Card via Chapa.',
+                                style: TextStyle(fontSize: 12, color: Colors.teal.shade900),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else if (selectedPayment.contains('Telebirr')) ...[
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
