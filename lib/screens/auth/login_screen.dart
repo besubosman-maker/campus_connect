@@ -4,6 +4,7 @@ import '../../constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
+import '../admin/admin_login_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -263,6 +264,50 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ],
+                  ),
+
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: Colors.grey.shade300)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'GOVERNANCE',
+                          style: TextStyle(
+                            fontSize: 10,
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ),
+                      Expanded(child: Divider(color: Colors.grey.shade300)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Dedicated Super Admin Portal Entry Button
+                  Center(
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.shield_rounded, size: 18, color: Color(0xFFD97706)),
+                      label: const Text(
+                        'Super Admin Portal Sign-In',
+                        style: TextStyle(
+                          color: Color(0xFFD97706),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AdminLoginScreen(),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),

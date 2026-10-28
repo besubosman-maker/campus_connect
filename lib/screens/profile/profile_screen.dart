@@ -5,7 +5,6 @@ import '../../constants/app_constants.dart';
 import '../../models/rating_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
-import '../../services/admin_service.dart';
 import '../../services/rating_service.dart';
 import '../../widgets/app_image_helper.dart';
 import '../../widgets/rating_stars.dart';
@@ -336,17 +335,6 @@ class ProfileScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // If not yet admin, provide quick creator unlock for instant testing
-                  if (!user.isAdmin) ...[
-                    const Divider(height: 1, indent: 56),
-                    ListTile(
-                      leading: const Icon(Icons.admin_panel_settings_outlined, color: Colors.amber),
-                      title: const Text('Platform Administrator Access'),
-                      subtitle: const Text('Tap to unlock Super Admin tools for testing', style: TextStyle(fontSize: 12)),
-                      trailing: const Icon(Icons.lock_open_rounded, size: 20),
-                      onTap: () => _showAdminPasscodeDialog(context, user.uid),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -491,59 +479,6 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 32),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showAdminPasscodeDialog(BuildContext context, String uid) {
-    final codeController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Unlock Super Admin Role'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Enter the administrator secret passkey (Default: "admin123") or tap Activate to test.',
-              style: TextStyle(fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: codeController,
-              decoration: const InputDecoration(
-                hintText: 'Enter admin passcode',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              final code = codeController.text.trim();
-              if (code == 'admin123' || code.isEmpty) {
-                await AdminService().setUserRole(uid, 'super_admin');
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Super Admin Role Activated! 🎉')),
-                  );
-                }
-              } else {
-                if (ctx.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Invalid admin passkey')),
-                  );
-                }
-              }
-            },
-            child: const Text('Activate'),
-          ),
-        ],
       ),
     );
   }
