@@ -7,6 +7,7 @@ import 'package:campus_connect/models/offer_model.dart';
 import 'package:campus_connect/models/listing_question_model.dart';
 import 'package:campus_connect/models/item_request_model.dart';
 import 'package:campus_connect/models/message_model.dart';
+import 'package:campus_connect/models/notification_model.dart';
 import 'package:campus_connect/providers/locale_provider.dart';
 import 'package:campus_connect/providers/theme_provider.dart';
 import 'package:campus_connect/widgets/rating_stars.dart';
@@ -202,5 +203,21 @@ void main() {
 
     expect(imageMsg.isImage, isTrue);
     expect(imageMsg.isVoice, isFalse);
+  });
+
+  test('NotificationModel initializes unread notification properly', () {
+    final notif = NotificationModel(
+      id: 'n-1',
+      userId: 'user-1',
+      title: '🤝 New Offer',
+      body: 'You received an offer of ETB 500',
+      type: 'offer',
+      targetId: 'listing-123',
+      createdAt: DateTime.now(),
+    );
+
+    expect(notif.isRead, isFalse);
+    expect(notif.type, 'offer');
+    expect(notif.targetId, 'listing-123');
   });
 }

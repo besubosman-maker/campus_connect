@@ -17,6 +17,7 @@ import '../../services/email_service.dart';
 import '../../services/listing_service.dart';
 import '../../services/order_service.dart';
 import '../../services/offer_service.dart';
+import '../../services/notification_service.dart';
 import '../../services/chapa_service.dart';
 import '../../widgets/app_image_helper.dart';
 import '../../widgets/empty_state.dart';
@@ -364,7 +365,7 @@ class _OrdersScreenState extends State<OrdersScreen>
     );
   }
 
-  void _showCounterOfferDialog(OfferModel offer) {
+  void _showCounterOfferDialog(OfferModel offer, UserModel currentUser) {
     final counterController = TextEditingController();
     final noteController = TextEditingController();
     bool isSubmitting = false;
@@ -442,6 +443,14 @@ class _OrdersScreenState extends State<OrdersScreen>
                           action: 'counter',
                           counterAmount: val,
                           sellerNote: noteController.text.trim(),
+                        );
+
+                        await NotificationService().sendNotification(
+                          userId: offer.buyerId,
+                          title: '🔄 Counter-Offer Received',
+                          body: '${currentUser.name} sent a counter-offer of ${AppConstants.currencySymbol}${val.toStringAsFixed(0)} for "${offer.listingTitle}".',
+                          type: 'offer',
+                          targetId: offer.listingId,
                         );
 
                         if (ctx.mounted) Navigator.pop(ctx);
@@ -645,6 +654,15 @@ class _OrdersScreenState extends State<OrdersScreen>
                           offerId: offer.id,
                           action: 'accept',
                         );
+
+                        await NotificationService().sendNotification(
+                          userId: offer.buyerId,
+                          title: '🎉 Your Offer Was Accepted!',
+                          body: '${currentUser.name} accepted your offer of ${AppConstants.currencySymbol}${offer.offerAmount.toStringAsFixed(0)} for "${offer.listingTitle}". Tap to complete order.',
+                          type: 'offer',
+                          targetId: offer.listingId,
+                        );
+
                         if (mounted) {
                           messenger.showSnackBar(
                             const SnackBar(content: Text('Offer accepted! Buyer notified.')),
@@ -663,7 +681,7 @@ class _OrdersScreenState extends State<OrdersScreen>
                       ),
                       icon: const Icon(Icons.swap_horiz, size: 16),
                       label: const Text('Counter', style: TextStyle(fontSize: 12)),
-                      onPressed: () => _showCounterOfferDialog(offer),
+                      onPressed: () => _showCounterOfferDialog(offer, currentUser),
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -2164,6 +2182,14 @@ class _OrdersScreenState extends State<OrdersScreen>
                               order: order,
                               transactionRef: ref,
                               proofImage: proofBase64,
+                            );
+
+                            await NotificationService().sendNotification(
+                              userId: order.sellerId,
+                              title: '💳 Payment Proof Submitted',
+                              body: 'Buyer submitted payment reference ($ref) for "${order.listingTitle}". Please verify.',
+                              type: 'order',
+                              targetId: order.id,
                             );
 
                             if (dialogCtx.mounted) Navigator.pop(dialogCtx);

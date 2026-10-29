@@ -23,6 +23,7 @@ import '../../services/marketplace_extension_service.dart';
 import 'boost_listing_dialog.dart';
 import '../../models/listing_question_model.dart';
 import '../../services/question_service.dart';
+import '../../services/notification_service.dart';
 import 'make_offer_dialog.dart';
 
 class ListingDetailScreen extends StatefulWidget {
@@ -375,6 +376,15 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                           questionId: question.id,
                           answer: ans,
                         );
+
+                        await NotificationService().sendNotification(
+                          userId: question.askerId,
+                          title: '💬 Question Answered!',
+                          body: 'The seller answered your question: "$ans"',
+                          type: 'qa',
+                          targetId: question.listingId,
+                        );
+
                         if (ctx.mounted) Navigator.pop(ctx);
                         if (mounted) {
                           messenger.showSnackBar(

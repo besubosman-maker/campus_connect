@@ -8,7 +8,6 @@ import '../../providers/theme_provider.dart';
 import '../../services/rating_service.dart';
 import '../../widgets/app_image_helper.dart';
 import '../../widgets/rating_stars.dart';
-import '../admin/admin_dashboard_screen.dart';
 import '../listing/my_listings_screen.dart';
 import '../order/orders_screen.dart';
 import 'edit_profile_screen.dart';
@@ -53,72 +52,6 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Super Admin Dashboard Banner (for Admins or Owner)
-            if (user.isAdmin) ...[
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFD97706), Color(0xFFB45309)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.amber.shade900.withOpacity(0.25),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AdminDashboardScreen(),
-                        ),
-                      );
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      child: Row(
-                        children: [
-                          Icon(Icons.shield_rounded, color: Colors.white, size: 30),
-                          SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Super Admin Dashboard',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  'Manage platform disputes, users & listings',
-                                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-
             // User Header Card
             Container(
               padding: const EdgeInsets.all(20),

@@ -4,6 +4,7 @@ import '../../models/listing_model.dart';
 import '../../models/offer_model.dart';
 import '../../models/user_model.dart';
 import '../../services/offer_service.dart';
+import '../../services/notification_service.dart';
 
 class MakeOfferDialog extends StatefulWidget {
   final ListingModel listing;
@@ -87,6 +88,15 @@ class _MakeOfferDialogState extends State<MakeOfferDialog> {
       );
 
       await OfferService().submitOffer(offer);
+
+      // Send in-app notification to seller
+      await NotificationService().sendNotification(
+        userId: widget.seller.uid,
+        title: '🤝 New Price Offer Received!',
+        body: '${widget.currentUser.name} offered ${AppConstants.currencySymbol}${amount.toStringAsFixed(0)} for "${widget.listing.title}".',
+        type: 'offer',
+        targetId: widget.listing.id,
+      );
 
       if (mounted) {
         Navigator.pop(context, true);

@@ -21,6 +21,8 @@ import '../../providers/locale_provider.dart';
 import '../admin/admin_dashboard_screen.dart';
 import '../listing/favorites_screen.dart';
 import '../requests/item_requests_screen.dart';
+import '../notifications/notifications_screen.dart';
+import '../../services/notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ChatService _chatService = ChatService();
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
@@ -278,6 +281,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const OrdersScreen()),
+                  );
+                },
+              ),
+              Consumer<AuthProvider>(
+                builder: (context, auth, _) {
+                  final uid = auth.userModel?.uid;
+                  if (uid == null) return const SizedBox.shrink();
+
+                  return StreamBuilder<int>(
+                    stream: _notificationService.getUnreadNotificationCountStream(uid),
+                    builder: (context, snap) {
+                      final count = snap.data ?? 0;
+                      return IconButton(
+                        icon: Badge(
+                          isLabelVisible: count > 0,
+                          label: Text('$count'),
+                          backgroundColor: Colors.redAccent,
+                          child: const Icon(Icons.notifications_outlined, color: AppConstants.primaryColor),
+                        ),
+                        tooltip: 'Notifications (ማሳወቂያዎች)',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),

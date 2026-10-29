@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/chat_service.dart';
 import '../../services/item_request_service.dart';
+import '../../services/notification_service.dart';
 import '../../widgets/app_image_helper.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/empty_state.dart';
@@ -77,6 +78,14 @@ class _ItemRequestsScreenState extends State<ItemRequestsScreen> {
         chatId: chatId,
         senderId: currentUser.uid,
         text: '👋 Hi ${request.userName}! I saw your request for "${request.title}" on the Wanted Board. I have this item available!',
+      );
+
+      // Notify the requester
+      await NotificationService().sendNotification(
+        userId: request.userId,
+        title: '📢 Item Found for Your Request!',
+        body: '${currentUser.name} has the "${request.title}" you requested on the Wanted Board!',
+        type: 'request',
       );
 
       if (mounted) {
