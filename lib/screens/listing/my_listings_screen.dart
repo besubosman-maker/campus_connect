@@ -10,6 +10,7 @@ import '../../services/listing_service.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/loading_indicator.dart';
 import 'create_listing_screen.dart';
+import 'boost_listing_dialog.dart';
 import 'listing_detail_screen.dart';
 
 class MyListingsScreen extends StatefulWidget {
@@ -191,6 +192,24 @@ class _MyListingsScreenState extends State<MyListingsScreen>
                                 ),
                               ),
                             ),
+                            if (listing.isBoostedActive) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.shade100,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'VIP BOOSTED 🚀',
+                                  style: TextStyle(
+                                    color: Colors.amber.shade900,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(width: 8),
                             Text(
                               listing.category,
@@ -224,7 +243,12 @@ class _MyListingsScreenState extends State<MyListingsScreen>
                   // Actions menu
                   PopupMenuButton<String>(
                     onSelected: (val) async {
-                      if (val == 'edit') {
+                      if (val == 'boost') {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => BoostListingDialog(listing: listing),
+                        );
+                      } else if (val == 'edit') {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -239,6 +263,16 @@ class _MyListingsScreenState extends State<MyListingsScreen>
                       }
                     },
                     itemBuilder: (ctx) => [
+                      const PopupMenuItem(
+                        value: 'boost',
+                        child: Row(
+                          children: [
+                            Icon(Icons.rocket_launch_rounded, size: 18, color: Color(0xFFD97706)),
+                            SizedBox(width: 8),
+                            Text('Boost Listing 🚀', style: TextStyle(color: Color(0xFFD97706), fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
                       const PopupMenuItem(
                         value: 'edit',
                         child: Row(

@@ -967,6 +967,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                   ),
                                 ),
                               ],
+                              if (user.idVerificationStatus == 'pending') ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.shade100,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    'ID PENDING',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.orange.shade900,
+                                    ),
+                                  ),
+                                ),
+                              ],
                               const Spacer(),
                               RatingStars(rating: user.rating, starSize: 12),
                             ],
@@ -976,7 +994,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       trailing: PopupMenuButton<String>(
                         icon: const Icon(Icons.more_vert),
                         onSelected: (val) async {
-                          if (val == 'toggle_ban') {
+                          if (val == 'verify_id') {
+                            await _adminService.verifyUserIdentity(user.uid, true);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('ID Verified for ${user.name}! Green badge awarded.')),
+                              );
+                            }
+                          } else if (val == 'reject_id') {
+                            await _adminService.verifyUserIdentity(user.uid, false);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('ID submission rejected for ${user.name}.')),
+                              );
+                            }
+                          } else if (val == 'toggle_ban') {
                             await _adminService.toggleBanUser(user.uid, !user.isBanned);
                           } else if (val == 'toggle_verify') {
                             await _adminService.toggleVerifySeller(user.uid, !user.isVerifiedSeller);
@@ -989,6 +1021,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           }
                         },
                         itemBuilder: (context) => [
+                          if (user.idVerificationStatus == 'pending') ...[
+                            const PopupMenuItem(
+                              value: 'verify_id',
+                              child: Text('Approve Kebele / Student ID ✓', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                            ),
+                            const PopupMenuItem(
+                              value: 'reject_id',
+                              child: Text('Reject ID Submission ✗', style: TextStyle(color: Colors.red)),
+                            ),
+                            const PopupMenuDivider(),
+                          ],
                           PopupMenuItem(
                             value: 'toggle_verify',
                             child: Text(user.isVerifiedSeller ? 'Revoke Verified Badge' : 'Grant Verified Badge'),

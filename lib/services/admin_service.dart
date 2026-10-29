@@ -110,6 +110,15 @@ class AdminService {
     });
   }
 
+  // Verify User Kebele/Student ID
+  Future<void> verifyUserIdentity(String uid, bool isApproved) async {
+    await _firestore.collection('users').doc(uid).update({
+      'idVerificationStatus': isApproved ? 'verified' : 'rejected',
+      'isVerifiedSeller': isApproved,
+      'idVerifiedAt': Timestamp.now(),
+    });
+  }
+
   // Stream All Listings for Moderation
   Stream<List<ListingModel>> getAllListingsStream() {
     return _firestore

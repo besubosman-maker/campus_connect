@@ -19,6 +19,8 @@ import '../chat/chat_screen.dart';
 import '../order/orders_screen.dart';
 import '../rating/rate_seller_screen.dart';
 import 'create_listing_screen.dart';
+import '../../services/marketplace_extension_service.dart';
+import 'boost_listing_dialog.dart';
 
 class ListingDetailScreen extends StatefulWidget {
   final String listingId;
@@ -753,10 +755,38 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, _) {
+              final user = authProvider.userModel;
+              final isFav = user?.favorites.contains(listing.id) ?? false;
+              return IconButton(
+                icon: Icon(
+                  isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  color: isFav ? Colors.redAccent : Colors.grey,
+                ),
+                tooltip: isFav ? 'Remove from Favorites' : 'Save to Favorites',
+                onPressed: user == null
+                    ? null
+                    : () async {
+                        await MarketplaceExtensionService().toggleFavorite(
+                          uid: user.uid,
+                          listingId: listing.id,
+                          isCurrentlyFavorite: isFav,
+                        );
+                      },
+              );
+            },
+          ),
           if (isOwner)
             PopupMenuButton<String>(
               onSelected: (val) async {
-                if (val == 'edit') {
+                if (val == 'boost') {
+                  final boosted = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => BoostListingDialog(listing: listing),
+                  );
+                  if (boosted == true) _loadData();
+                } else if (val == 'edit') {
                   final updated = await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(
@@ -795,6 +825,16 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 }
               },
               itemBuilder: (ctx) => [
+                const PopupMenuItem(
+                  value: 'boost',
+                  child: Row(
+                    children: [
+                      Icon(Icons.rocket_launch_rounded, size: 20, color: Color(0xFFD97706)),
+                      SizedBox(width: 8),
+                      Text('Boost Listing 🚀', style: TextStyle(color: Color(0xFFD97706), fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
                 const PopupMenuItem(
                   value: 'edit',
                   child: Row(
@@ -910,6 +950,45 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                     fontSize: 13,
                                     letterSpacing: 1,
                                   ),
+                                ),
+                              ),
+                            ),
+
+                          // Featured VIP Promotion Badge
+                          if (listing.isBoostedActive)
+                            Positioned(
+                              top: 16,
+                              left: 16,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFFD97706), Color(0xFFB45309)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.amber.shade900.withOpacity(0.35),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.bolt_rounded, color: Colors.white, size: 16),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'FEATURED VIP',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -1043,12 +1122,42 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          _seller?.name ?? 'Campus Student',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                _seller?.name ?? 'Community Member',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            ),
+                                            if (_seller?.isIdVerified == true || _seller?.isVerifiedSeller == true)
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.green.shade50,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  border: Border.all(color: Colors.green.shade300),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(Icons.verified, color: Colors.green, size: 13),
+                                                    const SizedBox(width: 3),
+                                                    Text(
+                                                      'ID Verified',
+                                                      style: TextStyle(
+                                                        color: Colors.green.shade900,
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 10,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                          ],
                                         ),
                                         const SizedBox(height: 4),
                                         RatingStars(
@@ -1073,6 +1182,55 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                 const SizedBox(height: 12),
                                 const Divider(height: 1),
                                 const SizedBox(height: 10),
+                                // Instant Direct Contact Options (Phone Call & Telegram)
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        icon: const Icon(Icons.phone_rounded, size: 16),
+                                        label: const Text('Call Seller'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF059669),
+                                          foregroundColor: Colors.white,
+                                          visualDensity: VisualDensity.compact,
+                                        ),
+                                        onPressed: () {
+                                          final phone = listing.sellerPhone ?? _seller?.phoneNumber ?? _seller?.telebirrNumber;
+                                          if (phone != null && phone.isNotEmpty) {
+                                            MarketplaceExtensionService().launchPhoneCall(phone);
+                                          } else {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Seller has not listed a phone number. Use in-app chat.')),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        icon: const Icon(Icons.send_rounded, size: 16),
+                                        label: const Text('Telegram'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF0284C7),
+                                          foregroundColor: Colors.white,
+                                          visualDensity: VisualDensity.compact,
+                                        ),
+                                        onPressed: () {
+                                          final tg = listing.sellerTelegram ?? _seller?.telegramUsername;
+                                          if (tg != null && tg.isNotEmpty) {
+                                            MarketplaceExtensionService().launchTelegram(tg);
+                                          } else {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Seller has not linked a Telegram username. Use in-app chat.')),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
                                 Row(
                                   children: [
                                     Expanded(

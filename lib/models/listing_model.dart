@@ -11,6 +11,11 @@ class ListingModel {
   final String status; // 'available' or 'sold'
   final DateTime createdAt;
   final List<String> searchKeywords;
+  // Monetization & Contact features
+  final bool isFeatured;
+  final DateTime? featuredUntil;
+  final String? sellerTelegram;
+  final String? sellerPhone;
 
   ListingModel({
     required this.id,
@@ -23,10 +28,16 @@ class ListingModel {
     this.status = 'available',
     required this.createdAt,
     required this.searchKeywords,
+    this.isFeatured = false,
+    this.featuredUntil,
+    this.sellerTelegram,
+    this.sellerPhone,
   });
 
   bool get isAvailable => status == 'available';
   bool get isSold => status == 'sold';
+  bool get isBoostedActive =>
+      isFeatured && (featuredUntil == null || featuredUntil!.isAfter(DateTime.now()));
 
   static List<String> generateKeywords(String title, String category) {
     final Set<String> keywords = {};
@@ -35,7 +46,6 @@ class ListingModel {
       final clean = word.replaceAll(RegExp(r'[^\w\s]'), '').trim();
       if (clean.isNotEmpty) {
         keywords.add(clean);
-        // Add prefixes for search-as-you-type support if needed
         for (int i = 1; i <= clean.length; i++) {
           keywords.add(clean.substring(0, i));
         }
@@ -57,6 +67,10 @@ class ListingModel {
       status: data['status'] as String? ?? 'available',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       searchKeywords: List<String>.from(data['searchKeywords'] as List? ?? []),
+      isFeatured: data['isFeatured'] as bool? ?? false,
+      featuredUntil: (data['featuredUntil'] as Timestamp?)?.toDate(),
+      sellerTelegram: data['sellerTelegram'] as String?,
+      sellerPhone: data['sellerPhone'] as String?,
     );
   }
 
@@ -70,9 +84,13 @@ class ListingModel {
       'images': images,
       'status': status,
       'createdAt': Timestamp.fromDate(createdAt),
-      'searchKeywords': searchKeywords.isNotEmpty 
-          ? searchKeywords 
+      'searchKeywords': searchKeywords.isNotEmpty
+          ? searchKeywords
           : generateKeywords(title, category),
+      'isFeatured': isFeatured,
+      'featuredUntil': featuredUntil != null ? Timestamp.fromDate(featuredUntil!) : null,
+      'sellerTelegram': sellerTelegram,
+      'sellerPhone': sellerPhone,
     };
   }
 
@@ -87,6 +105,10 @@ class ListingModel {
     String? status,
     DateTime? createdAt,
     List<String>? searchKeywords,
+    bool? isFeatured,
+    DateTime? featuredUntil,
+    String? sellerTelegram,
+    String? sellerPhone,
   }) {
     return ListingModel(
       id: id ?? this.id,
@@ -99,6 +121,10 @@ class ListingModel {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       searchKeywords: searchKeywords ?? this.searchKeywords,
+      isFeatured: isFeatured ?? this.isFeatured,
+      featuredUntil: featuredUntil ?? this.featuredUntil,
+      sellerTelegram: sellerTelegram ?? this.sellerTelegram,
+      sellerPhone: sellerPhone ?? this.sellerPhone,
     );
   }
 }

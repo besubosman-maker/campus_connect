@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/marketplace_extension_service.dart';
 import '../../widgets/app_image_helper.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
@@ -20,6 +22,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
+  late TextEditingController _telegramController;
   late TextEditingController _telebirrController;
   late TextEditingController _cbeAccountController;
   late TextEditingController _cbeNameController;
@@ -37,6 +40,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     _nameController = TextEditingController(text: user?.name ?? '');
     _phoneController = TextEditingController(text: user?.phoneNumber ?? '');
+    _telegramController = TextEditingController(text: user?.telegramUsername ?? '');
     _telebirrController = TextEditingController(text: user?.telebirrNumber ?? '');
     _cbeAccountController = TextEditingController(text: user?.cbeAccount ?? '');
     _cbeNameController = TextEditingController(text: user?.cbeAccountName ?? '');
@@ -51,6 +55,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _telegramController.dispose();
     _telebirrController.dispose();
     _cbeAccountController.dispose();
     _cbeNameController.dispose();
@@ -127,6 +132,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final updateSuccess = await auth.updateProfile(
       name: _nameController.text.trim(),
       phoneNumber: _phoneController.text.trim(),
+      telegramUsername: _telegramController.text.trim(),
       telebirrNumber: _telebirrController.text.trim(),
       cbeAccount: _cbeAccountController.text.trim(),
       cbeAccountName: _cbeNameController.text.trim(),
@@ -247,6 +253,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: 14),
 
+                // Telegram Username field
+                CustomTextField(
+                  controller: _telegramController,
+                  label: 'Telegram Username (@username)',
+                  hint: '@your_telegram (e.g. @besu_ethio)',
+                  prefixIcon: Icons.send_rounded,
+                ),
+                const SizedBox(height: 14),
+
                 // Email field (read-only)
                 TextFormField(
                   initialValue: user?.email ?? '',
@@ -348,6 +363,94 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 24),
+
+                // Identity Verification Card (Kebele ID / Student ID)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.green.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.badge_rounded, color: Colors.green.shade800),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Identity Verification (መታወቂያ)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: Colors.green.shade900,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: user?.isIdVerified == true
+                                  ? Colors.green.shade100
+                                  : user?.idVerificationStatus == 'pending'
+                                      ? Colors.amber.shade100
+                                      : Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              user?.isIdVerified == true
+                                  ? 'VERIFIED ✓'
+                                  : user?.idVerificationStatus == 'pending'
+                                      ? 'PENDING ⏳'
+                                      : 'UNVERIFIED',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: user?.isIdVerified == true
+                                    ? Colors.green.shade900
+                                    : user?.idVerificationStatus == 'pending'
+                                        ? Colors.amber.shade900
+                                        : Colors.grey.shade800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Upload your Kebele ID or University Student ID to get an official "ID Verified (ማንነቱ የተረጋገጠ)" trust badge on all your listings.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                      ),
+                      const SizedBox(height: 12),
+                      if (user?.isIdVerified != true && user?.idVerificationStatus != 'pending')
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.upload_file_rounded, size: 18),
+                          label: const Text('Upload Kebele / Student ID Photo'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.green.shade800,
+                            side: BorderSide(color: Colors.green.shade400),
+                          ),
+                          onPressed: () => _pickAndUploadIdDocument(user?.uid ?? ''),
+                        )
+                      else if (user?.idVerificationStatus == 'pending')
+                        const Text(
+                          '✓ ID document submitted! Awaiting Super Admin approval.',
+                          style: TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.w600),
+                        )
+                      else if (user?.isIdVerified == true)
+                        const Text(
+                          '✓ Your identity has been officially verified by Super Admin.',
+                          style: TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w600),
+                        ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 32),
 
                 // Save button
@@ -362,5 +465,44 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _pickAndUploadIdDocument(String uid) async {
+    try {
+      final picked = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 75,
+      );
+      if (picked != null) {
+        setState(() => _isSaving = true);
+        final bytes = await picked.readAsBytes();
+        final base64String = base64Encode(bytes);
+        final dataUrl = 'data:image/jpeg;base64,$base64String';
+
+        await MarketplaceExtensionService().submitIdVerification(
+          uid: uid,
+          idDocumentUrl: dataUrl,
+        );
+
+        if (mounted) {
+          setState(() => _isSaving = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ID Document submitted successfully! Awaiting Super Admin approval. 🇪🇹'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload ID document: $e')),
+        );
+      }
+    }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../constants/app_constants.dart';
+import '../../models/listing_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/listing_provider.dart';
 import '../../widgets/empty_state.dart';
@@ -14,8 +15,11 @@ import '../order/orders_screen.dart';
 import '../profile/profile_screen.dart';
 import '../../services/chat_service.dart';
 import '../../services/admin_service.dart';
+import '../../services/marketplace_extension_service.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/locale_provider.dart';
 import '../admin/admin_dashboard_screen.dart';
+import '../listing/favorites_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -64,6 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     final auth = Provider.of<AuthProvider>(context);
+    final locale = Provider.of<LocaleProvider>(context);
     final currentUserId = auth.userModel?.uid;
 
     return Scaffold(
@@ -87,10 +92,10 @@ class _HomeScreenState extends State<HomeScreen> {
             elevation: 4,
             indicatorColor: AppConstants.primaryColor.withOpacity(0.15),
             destinations: [
-              const NavigationDestination(
-                icon: Icon(Icons.storefront_outlined),
-                selectedIcon: Icon(Icons.storefront, color: AppConstants.primaryColor),
-                label: 'Browse',
+              NavigationDestination(
+                icon: const Icon(Icons.storefront_outlined),
+                selectedIcon: const Icon(Icons.storefront, color: AppConstants.primaryColor),
+                label: locale.tr('browse'),
               ),
               NavigationDestination(
                 icon: Badge(
@@ -105,17 +110,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   backgroundColor: Colors.redAccent,
                   child: const Icon(Icons.chat_bubble_rounded, color: AppConstants.primaryColor),
                 ),
-                label: 'Chats',
+                label: locale.tr('chats'),
               ),
-              const NavigationDestination(
-                icon: Icon(Icons.inventory_2_outlined),
-                selectedIcon: Icon(Icons.inventory_2_rounded, color: AppConstants.primaryColor),
-                label: 'My Listings',
+              NavigationDestination(
+                icon: const Icon(Icons.inventory_2_outlined),
+                selectedIcon: const Icon(Icons.inventory_2_rounded, color: AppConstants.primaryColor),
+                label: locale.tr('my_listings'),
               ),
-              const NavigationDestination(
-                icon: Icon(Icons.person_outline_rounded),
-                selectedIcon: Icon(Icons.person_rounded, color: AppConstants.primaryColor),
-                label: 'Profile',
+              NavigationDestination(
+                icon: const Icon(Icons.person_outline_rounded),
+                selectedIcon: const Icon(Icons.person_rounded, color: AppConstants.primaryColor),
+                label: locale.tr('profile'),
               ),
             ],
           );
@@ -131,9 +136,9 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               backgroundColor: AppConstants.primaryColor,
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                'Sell Item',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              label: Text(
+                locale.tr('sell_item'),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             )
           : null,
@@ -144,6 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Consumer<ListingProvider>(
       builder: (context, listingProvider, _) {
         final cardColor = Theme.of(context).cardTheme.color ?? Colors.white;
+        final locale = Provider.of<LocaleProvider>(context);
 
         return Scaffold(
           appBar: AppBar(
@@ -185,6 +191,34 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             actions: [
+              Consumer<LocaleProvider>(
+                builder: (context, loc, _) {
+                  return TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () => loc.toggleLanguage(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppConstants.primaryColor.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppConstants.primaryColor.withOpacity(0.25)),
+                      ),
+                      child: Text(
+                        loc.isAmharic ? '🇪🇹 አማ' : '🇺🇸 EN',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                          color: AppConstants.primaryColor,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
               Consumer<ThemeProvider>(
                 builder: (context, themeProvider, _) {
                   final isDark = themeProvider.isCurrentDark(context);
@@ -195,6 +229,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
                     onPressed: () => themeProvider.toggleTheme(),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.favorite_rounded, color: Colors.redAccent),
+                tooltip: 'Saved Favorites',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const FavoritesScreen()),
                   );
                 },
               ),
@@ -226,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
             ],
           ),
           body: RefreshIndicator(
@@ -354,6 +398,72 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                   ),
+                ),
+
+                // Featured VIP Deals Carousel
+                StreamBuilder<List<ListingModel>>(
+                  stream: MarketplaceExtensionService().getFeaturedListingsStream(),
+                  builder: (context, snap) {
+                    final featured = snap.data ?? [];
+                    if (featured.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
+                    return SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFFD97706), Color(0xFFB45309)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 16),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  locale.tr('featured_deals'),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(
+                            height: 200,
+                            child: ListView.separated(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              scrollDirection: Axis.horizontal,
+                              itemCount: featured.length,
+                              separatorBuilder: (ctx, i) => const SizedBox(width: 12),
+                              itemBuilder: (context, index) {
+                                final item = featured[index];
+                                return SizedBox(
+                                  width: 155,
+                                  child: ListingCard(
+                                    listing: item,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ListingDetailScreen(listingId: item.id),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                      ),
+                    );
+                  },
                 ),
 
                 // Content (Loading, Error, Empty, or Grid)

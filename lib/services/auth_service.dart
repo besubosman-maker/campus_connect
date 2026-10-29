@@ -129,6 +129,7 @@ class AuthService {
     String? cbeAccount,
     String? cbeAccountName,
     String? preferredPayment,
+    String? telegramUsername,
   }) async {
     final Map<String, dynamic> updates = {};
     if (name != null && name.trim().isNotEmpty) {
@@ -157,6 +158,7 @@ class AuthService {
     if (cbeAccount != null) updates['cbeAccount'] = cbeAccount.trim();
     if (cbeAccountName != null) updates['cbeAccountName'] = cbeAccountName.trim();
     if (preferredPayment != null) updates['preferredPayment'] = preferredPayment;
+    if (telegramUsername != null) updates['telegramUsername'] = telegramUsername.trim();
 
     if (updates.isNotEmpty) {
       await _firestore.collection('users').doc(uid).set(updates, SetOptions(merge: true));

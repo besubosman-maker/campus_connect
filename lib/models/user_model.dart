@@ -15,10 +15,16 @@ class UserModel {
   final String? cbeAccount;
   final String? cbeAccountName;
   final String? preferredPayment;
+  final String? telegramUsername;
   // Super Admin and Moderation fields
   final String role; // 'super_admin', 'admin', 'user'
   final bool isBanned;
   final bool isVerifiedSeller;
+  // Kebele ID / Student ID verification
+  final String idVerificationStatus; // 'unverified', 'pending', 'verified', 'rejected'
+  final String? idDocumentUrl;
+  // Wishlist / Favorites
+  final List<String> favorites;
 
   UserModel({
     required this.uid,
@@ -34,9 +40,13 @@ class UserModel {
     this.cbeAccount,
     this.cbeAccountName,
     this.preferredPayment,
+    this.telegramUsername,
     this.role = 'user',
     this.isBanned = false,
     this.isVerifiedSeller = false,
+    this.idVerificationStatus = 'unverified',
+    this.idDocumentUrl,
+    this.favorites = const [],
   });
 
   bool get isSuperAdmin =>
@@ -45,6 +55,8 @@ class UserModel {
       email.toLowerCase() == 'besubosman@gmail.com';
 
   bool get isAdmin => isSuperAdmin || role == 'admin';
+
+  bool get isIdVerified => idVerificationStatus == 'verified';
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = (doc.data() as Map<String, dynamic>?) ?? {};
@@ -62,9 +74,13 @@ class UserModel {
       cbeAccount: data['cbeAccount'] as String?,
       cbeAccountName: data['cbeAccountName'] as String?,
       preferredPayment: data['preferredPayment'] as String?,
+      telegramUsername: data['telegramUsername'] as String?,
       role: data['role'] as String? ?? 'user',
       isBanned: data['isBanned'] as bool? ?? false,
       isVerifiedSeller: data['isVerifiedSeller'] as bool? ?? false,
+      idVerificationStatus: data['idVerificationStatus'] as String? ?? 'unverified',
+      idDocumentUrl: data['idDocumentUrl'] as String?,
+      favorites: List<String>.from(data['favorites'] as List? ?? []),
     );
   }
 
@@ -83,9 +99,13 @@ class UserModel {
       cbeAccount: map['cbeAccount'] as String?,
       cbeAccountName: map['cbeAccountName'] as String?,
       preferredPayment: map['preferredPayment'] as String?,
+      telegramUsername: map['telegramUsername'] as String?,
       role: map['role'] as String? ?? 'user',
       isBanned: map['isBanned'] as bool? ?? false,
       isVerifiedSeller: map['isVerifiedSeller'] as bool? ?? false,
+      idVerificationStatus: map['idVerificationStatus'] as String? ?? 'unverified',
+      idDocumentUrl: map['idDocumentUrl'] as String?,
+      favorites: List<String>.from(map['favorites'] as List? ?? []),
     );
   }
 
@@ -103,9 +123,13 @@ class UserModel {
       'cbeAccount': cbeAccount,
       'cbeAccountName': cbeAccountName,
       'preferredPayment': preferredPayment,
+      'telegramUsername': telegramUsername,
       'role': role,
       'isBanned': isBanned,
       'isVerifiedSeller': isVerifiedSeller,
+      'idVerificationStatus': idVerificationStatus,
+      'idDocumentUrl': idDocumentUrl,
+      'favorites': favorites,
     };
   }
 
@@ -123,9 +147,13 @@ class UserModel {
     String? cbeAccount,
     String? cbeAccountName,
     String? preferredPayment,
+    String? telegramUsername,
     String? role,
     bool? isBanned,
     bool? isVerifiedSeller,
+    String? idVerificationStatus,
+    String? idDocumentUrl,
+    List<String>? favorites,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -141,9 +169,13 @@ class UserModel {
       cbeAccount: cbeAccount ?? this.cbeAccount,
       cbeAccountName: cbeAccountName ?? this.cbeAccountName,
       preferredPayment: preferredPayment ?? this.preferredPayment,
+      telegramUsername: telegramUsername ?? this.telegramUsername,
       role: role ?? this.role,
       isBanned: isBanned ?? this.isBanned,
       isVerifiedSeller: isVerifiedSeller ?? this.isVerifiedSeller,
+      idVerificationStatus: idVerificationStatus ?? this.idVerificationStatus,
+      idDocumentUrl: idDocumentUrl ?? this.idDocumentUrl,
+      favorites: favorites ?? this.favorites,
     );
   }
 }

@@ -129,6 +129,7 @@ class AuthProvider extends ChangeNotifier {
     String? cbeAccount,
     String? cbeAccountName,
     String? preferredPayment,
+    String? telegramUsername,
   }) async {
     if (_firebaseUser == null) return false;
     _setLoading(true);
@@ -142,6 +143,7 @@ class AuthProvider extends ChangeNotifier {
         cbeAccount: cbeAccount,
         cbeAccountName: cbeAccountName,
         preferredPayment: preferredPayment,
+        telegramUsername: telegramUsername,
       );
       if (_userModel != null) {
         _userModel = _userModel!.copyWith(
@@ -152,6 +154,7 @@ class AuthProvider extends ChangeNotifier {
           cbeAccount: cbeAccount,
           cbeAccountName: cbeAccountName,
           preferredPayment: preferredPayment,
+          telegramUsername: telegramUsername,
         );
       }
       _setLoading(false);
