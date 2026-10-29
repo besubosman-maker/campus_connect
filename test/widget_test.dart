@@ -3,6 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:campus_connect/constants/app_constants.dart';
 import 'package:campus_connect/models/listing_model.dart';
 import 'package:campus_connect/models/user_model.dart';
+import 'package:campus_connect/models/offer_model.dart';
+import 'package:campus_connect/models/listing_question_model.dart';
+import 'package:campus_connect/models/item_request_model.dart';
+import 'package:campus_connect/models/message_model.dart';
 import 'package:campus_connect/providers/locale_provider.dart';
 import 'package:campus_connect/providers/theme_provider.dart';
 import 'package:campus_connect/widgets/rating_stars.dart';
@@ -115,5 +119,88 @@ void main() {
     expect(ThemeProvider.lightTheme.brightness, Brightness.light);
     expect(ThemeProvider.darkTheme.brightness, Brightness.dark);
     expect(ThemeProvider.darkTheme.scaffoldBackgroundColor, const Color(0xFF0F172A));
+  });
+
+  test('OfferModel computes status states correctly', () {
+    final offer = OfferModel(
+      id: 'offer-1',
+      listingId: 'listing-1',
+      listingTitle: 'Calculus 9th Edition',
+      listingPrice: 1000,
+      buyerId: 'buyer-1',
+      buyerName: 'Abebe',
+      buyerEmail: 'abebe@campus.et',
+      sellerId: 'seller-1',
+      sellerName: 'Kebede',
+      offerAmount: 800,
+      status: 'pending',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    expect(offer.isPending, isTrue);
+    expect(offer.isAccepted, isFalse);
+    expect(offer.offerAmount, 800);
+  });
+
+  test('ListingQuestionModel recognizes answered questions', () {
+    final question = ListingQuestionModel(
+      id: 'q-1',
+      listingId: 'listing-1',
+      askerId: 'buyer-1',
+      askerName: 'Sara',
+      question: 'Is battery health above 85%?',
+      sellerId: 'seller-1',
+      answer: 'Yes, it is 91%',
+      createdAt: DateTime.now(),
+    );
+
+    expect(question.isAnswered, isTrue);
+    expect(question.answer, contains('91%'));
+  });
+
+  test('ItemRequestModel recognizes open requests and budget', () {
+    final request = ItemRequestModel(
+      id: 'req-1',
+      userId: 'user-1',
+      userName: 'Dawit',
+      userEmail: 'dawit@campus.et',
+      title: 'Dorm Kettle',
+      description: 'Need a boiling kettle for Block 24',
+      category: 'Dorm & Room Essentials',
+      budgetETB: 650,
+      campusLocation: 'Block 24',
+      createdAt: DateTime.now(),
+    );
+
+    expect(request.isOpen, isTrue);
+    expect(request.budgetETB, 650);
+  });
+
+  test('MessageModel supports image and voice media types', () {
+    final voiceMsg = MessageModel(
+      id: 'm-1',
+      senderId: 'user-1',
+      text: 'ዋጋ ይቀነሳል?',
+      sentAt: DateTime.now(),
+      type: 'voice',
+      durationSeconds: 6,
+    );
+
+    expect(voiceMsg.isVoice, isTrue);
+    expect(voiceMsg.isImage, isFalse);
+    expect(voiceMsg.durationSeconds, 6);
+
+    final imageMsg = MessageModel(
+      id: 'm-2',
+      senderId: 'user-1',
+      text: 'Front view photo',
+      sentAt: DateTime.now(),
+      type: 'image',
+      mediaUrl: 'data:image/jpeg;base64,...',
+    );
+
+    expect(imageMsg.isImage, isTrue);
+    expect(imageMsg.isVoice, isFalse);
   });
 }

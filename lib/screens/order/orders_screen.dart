@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../constants/app_constants.dart';
 import '../../models/listing_model.dart';
 import '../../models/order_model.dart';
+import '../../models/offer_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/auth_service.dart';
@@ -15,12 +16,14 @@ import '../../services/chat_service.dart';
 import '../../services/email_service.dart';
 import '../../services/listing_service.dart';
 import '../../services/order_service.dart';
+import '../../services/offer_service.dart';
 import '../../services/chapa_service.dart';
 import '../../widgets/app_image_helper.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/loading_indicator.dart';
 import '../chat/chat_screen.dart';
 import '../rating/rate_seller_screen.dart';
+import '../listing/listing_detail_screen.dart';
 
 class OrdersScreen extends StatefulWidget {
   final int initialTabIndex;
@@ -40,14 +43,16 @@ class _OrdersScreenState extends State<OrdersScreen>
   final ListingService _listingService = ListingService();
   final ChapaService _chapaService = ChapaService();
   final ImagePicker _picker = ImagePicker();
+  final OfferService _offerService = OfferService();
+  String _offerSubFilter = 'received'; // 'received' or 'sent'
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 2,
+      length: 3,
       vsync: this,
-      initialIndex: widget.initialTabIndex,
+      initialIndex: widget.initialTabIndex.clamp(0, 2),
     );
   }
 
@@ -203,6 +208,10 @@ class _OrdersScreenState extends State<OrdersScreen>
               icon: Icon(Icons.storefront_outlined),
               text: 'Incoming Sales',
             ),
+            Tab(
+              icon: Icon(Icons.handshake_outlined),
+              text: 'Bargains (ድርድር 🤝)',
+            ),
           ],
         ),
       ),
@@ -211,6 +220,7 @@ class _OrdersScreenState extends State<OrdersScreen>
         children: [
           _buildPurchasesTab(user.uid),
           _buildSalesTab(user.uid),
+          _buildOffersTab(user),
         ],
       ),
     );
@@ -269,6 +279,465 @@ class _OrdersScreenState extends State<OrdersScreen>
           },
         );
       },
+    );
+  }
+
+  Widget _buildOffersTab(UserModel currentUser) {
+    final isReceived = _offerSubFilter == 'received';
+
+    return Column(
+      children: [
+        // Sub-filter tabs
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          color: Colors.white,
+          child: Row(
+            children: [
+              Expanded(
+                child: ChoiceChip(
+                  label: const Center(
+                    child: Text('Received (የቀረቡልኝ)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  ),
+                  selected: isReceived,
+                  selectedColor: AppConstants.primaryColor.withOpacity(0.18),
+                  labelStyle: TextStyle(
+                    color: isReceived ? AppConstants.primaryColor : Colors.black87,
+                  ),
+                  onSelected: (val) {
+                    if (val) setState(() => _offerSubFilter = 'received');
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ChoiceChip(
+                  label: const Center(
+                    child: Text('Sent (ያቀረብኳቸው)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  ),
+                  selected: !isReceived,
+                  selectedColor: AppConstants.primaryColor.withOpacity(0.18),
+                  labelStyle: TextStyle(
+                    color: !isReceived ? AppConstants.primaryColor : Colors.black87,
+                  ),
+                  onSelected: (val) {
+                    if (val) setState(() => _offerSubFilter = 'sent');
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        Expanded(
+          child: StreamBuilder<List<OfferModel>>(
+            stream: isReceived
+                ? _offerService.getSellerOffersStream(currentUser.uid)
+                : _offerService.getBuyerOffersStream(currentUser.uid),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const LoadingIndicator(message: 'Loading bargaining offers...');
+              }
+
+              final offers = snapshot.data ?? [];
+
+              if (offers.isEmpty) {
+                return EmptyState(
+                  icon: Icons.handshake_outlined,
+                  title: isReceived ? 'No Offers Received' : 'No Offers Made',
+                  message: isReceived
+                      ? 'When buyers negotiate prices on your listings, you can accept, decline, or counter-offer here.'
+                      : 'You have not made any price offers yet. Tap "Offer 🤝" on any listing to negotiate!',
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: offers.length,
+                itemBuilder: (context, index) {
+                  return _buildOfferCard(offers[index], isSeller: isReceived, currentUser: currentUser);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showCounterOfferDialog(OfferModel offer) {
+    final counterController = TextEditingController();
+    final noteController = TextEditingController();
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Counter-Offer (አዲስ ዋጋ ጥቀስ)', style: TextStyle(fontSize: 16)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Original Listing Price: ${AppConstants.currencySymbol}${offer.listingPrice.toStringAsFixed(0)}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  Text(
+                    'Buyer Offered: ${AppConstants.currencySymbol}${offer.offerAmount.toStringAsFixed(0)}',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.redAccent),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: counterController,
+                    keyboardType: TextInputType.number,
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Your Counter Price (ETB) *',
+                      hintText: 'e.g. 850',
+                      prefixText: 'ETB ',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: noteController,
+                    decoration: const InputDecoration(
+                      labelText: 'Note for Buyer (Optional)',
+                      hintText: 'e.g. Lowest I can do is 850 ETB',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber.shade800,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        final val = double.tryParse(counterController.text.trim());
+                        if (val == null || val <= 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please enter a valid amount')),
+                          );
+                          return;
+                        }
+
+                        final messenger = ScaffoldMessenger.of(context);
+                        setDialogState(() => isSubmitting = true);
+                        await _offerService.respondToOffer(
+                          offerId: offer.id,
+                          action: 'counter',
+                          counterAmount: val,
+                          sellerNote: noteController.text.trim(),
+                        );
+
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        if (mounted) {
+                          messenger.showSnackBar(
+                            const SnackBar(content: Text('Counter-offer sent to buyer!')),
+                          );
+                        }
+                      },
+                child: Text(isSubmitting ? 'Sending...' : 'Send Counter-Offer'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildOfferCard(OfferModel offer, {required bool isSeller, required UserModel currentUser}) {
+    final currencyFormat = NumberFormat.currency(symbol: AppConstants.currencySymbol, decimalDigits: 0);
+    final discountETB = (offer.listingPrice - offer.offerAmount).clamp(0, 999999);
+    final discountPercent = offer.listingPrice > 0 ? ((discountETB / offer.listingPrice) * 100).round() : 0;
+
+    Color badgeColor;
+    String badgeText;
+    IconData badgeIcon;
+
+    switch (offer.status) {
+      case 'accepted':
+        badgeColor = const Color(0xFF059669);
+        badgeText = 'Accepted ✓';
+        badgeIcon = Icons.check_circle_outline;
+        break;
+      case 'countered':
+        badgeColor = Colors.amber.shade800;
+        badgeText = 'Countered (${currencyFormat.format(offer.counterAmount ?? 0)})';
+        badgeIcon = Icons.swap_horiz_rounded;
+        break;
+      case 'declined':
+        badgeColor = Colors.red.shade700;
+        badgeText = 'Declined';
+        badgeIcon = Icons.cancel_outlined;
+        break;
+      case 'pending':
+      default:
+        badgeColor = AppConstants.primaryColor;
+        badgeText = 'Pending Offer';
+        badgeIcon = Icons.hourglass_top_rounded;
+        break;
+    }
+
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: offer.status == 'accepted' ? const Color(0xFF059669).withOpacity(0.4) : Colors.grey.shade200,
+          width: offer.status == 'accepted' ? 1.5 : 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Status and Date Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: badgeColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(badgeIcon, size: 14, color: badgeColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        badgeText,
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: badgeColor),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  DateFormat('MMM d, hh:mm a').format(offer.createdAt),
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+            const Divider(height: 18),
+
+            // Listing summary
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: AppImageHelper.buildImage(
+                    imageUrl: offer.listingImage ?? '',
+                    height: 54,
+                    width: 54,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        offer.listingTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Original Price: ${currencyFormat.format(offer.listingPrice)}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600, decoration: TextDecoration.lineThrough),
+                      ),
+                      Text(
+                        'Offer Price: ${currencyFormat.format(offer.offerAmount)} (-$discountPercent%)',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            if (offer.buyerNote != null && offer.buyerNote!.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.chat_bubble_outline, size: 14, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Note: "${offer.buyerNote}"',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade800, fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            if (offer.status == 'countered' && offer.counterAmount != null) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.shade300),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.swap_horiz, size: 16, color: Colors.amber.shade900),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Seller counter-offered ${currencyFormat.format(offer.counterAmount)}'
+                        '${offer.sellerNote != null && offer.sellerNote!.isNotEmpty ? ' ("${offer.sellerNote}")' : ''}',
+                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.amber.shade900),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 12),
+
+            // Actions for Seller when pending
+            if (isSeller && offer.status == 'pending') ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF059669),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                      icon: const Icon(Icons.check, size: 16),
+                      label: const Text('Accept', style: TextStyle(fontSize: 12)),
+                      onPressed: () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        await _offerService.respondToOffer(
+                          offerId: offer.id,
+                          action: 'accept',
+                        );
+                        if (mounted) {
+                          messenger.showSnackBar(
+                            const SnackBar(content: Text('Offer accepted! Buyer notified.')),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.amber.shade900,
+                        side: BorderSide(color: Colors.amber.shade700),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                      icon: const Icon(Icons.swap_horiz, size: 16),
+                      label: const Text('Counter', style: TextStyle(fontSize: 12)),
+                      onPressed: () => _showCounterOfferDialog(offer),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.red),
+                    tooltip: 'Decline Offer',
+                    onPressed: () async {
+                      await _offerService.respondToOffer(
+                        offerId: offer.id,
+                        action: 'decline',
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ]
+            // Actions for Buyer when accepted
+            else if (!isSeller && offer.status == 'accepted') ...[
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF059669),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.shopping_bag_outlined, size: 16),
+                  label: Text('Checkout at Accepted Price (${currencyFormat.format(offer.offerAmount)}) 🎉'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ListingDetailScreen(listingId: offer.listingId),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ]
+            // Actions for Buyer when countered
+            else if (!isSeller && offer.status == 'countered') ...[
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber.shade800,
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: const Icon(Icons.check, size: 16),
+                  label: Text('Accept Counter-Offer (${currencyFormat.format(offer.counterAmount ?? 0)})'),
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final nav = Navigator.of(context);
+                    await _offerService.respondToOffer(
+                      offerId: offer.id,
+                      action: 'accept',
+                    );
+                    if (mounted) {
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('Accepted counter-offer! Proceeding to listing.')),
+                      );
+                      nav.push(
+                        MaterialPageRoute(
+                          builder: (context) => ListingDetailScreen(listingId: offer.listingId),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 

@@ -107,6 +107,43 @@ class ChatService {
     await batch.commit();
   }
 
+  /// Send an image or voice message within a chat
+  Future<void> sendMediaMessage({
+    required String chatId,
+    required String senderId,
+    required String type, // 'image' or 'voice'
+    required String mediaUrl,
+    String text = '',
+    int? durationSeconds,
+  }) async {
+    final batch = _firestore.batch();
+    final messageRef = _chatsRef.doc(chatId).collection('messages').doc();
+
+    final previewText = type == 'image'
+        ? (text.isNotEmpty ? '📷 $text' : '📷 Photo')
+        : '🎙️ Voice note (${durationSeconds ?? 5}s)';
+
+    batch.set(messageRef, {
+      'senderId': senderId,
+      'text': text.trim(),
+      'sentAt': FieldValue.serverTimestamp(),
+      'read': false,
+      'type': type,
+      'mediaUrl': mediaUrl,
+      'durationSeconds': durationSeconds,
+    });
+
+    final chatDocRef = _chatsRef.doc(chatId);
+    batch.update(chatDocRef, {
+      'lastMessage': previewText,
+      'lastMessageAt': FieldValue.serverTimestamp(),
+      'lastSenderId': senderId,
+      'lastMessageRead': false,
+    });
+
+    await batch.commit();
+  }
+
   /// Mark all unread messages sent to the current user as read.
   Future<void> markMessagesAsRead({
     required String chatId,

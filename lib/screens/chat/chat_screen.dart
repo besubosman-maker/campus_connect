@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../constants/app_constants.dart';
 import '../../models/message_model.dart';
@@ -27,6 +30,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final ChatService _chatService = ChatService();
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ImagePicker _picker = ImagePicker();
   bool _isSending = false;
 
   @override
@@ -88,6 +92,281 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
     }
+  }
+
+  Future<void> _pickAndSendPhoto(ImageSource source) async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final currentUser = auth.userModel;
+    if (currentUser == null) return;
+
+    try {
+      final picked = await _picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 65,
+      );
+
+      if (picked == null) return;
+
+      setState(() => _isSending = true);
+
+      final bytes = await picked.readAsBytes();
+      final base64String = base64Encode(bytes);
+      final dataUri = 'data:image/jpeg;base64,$base64String';
+
+      await _chatService.sendMediaMessage(
+        chatId: widget.chatId,
+        senderId: currentUser.uid,
+        type: 'image',
+        mediaUrl: dataUri,
+        text: _textController.text.trim(),
+      );
+
+      _textController.clear();
+      _scrollToBottom();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to attach photo: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
+    }
+  }
+
+  void _showAttachSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Share Photo with Peer',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.camera_alt, color: Colors.blue),
+                ),
+                title: const Text('Take a Photo (ካሜራ)'),
+                subtitle: const Text('Capture item condition directly'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickAndSendPhoto(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.photo_library, color: Colors.green),
+                ),
+                title: const Text('Choose from Gallery (ጋለሪ)'),
+                subtitle: const Text('Select a saved screenshot or photo'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickAndSendPhoto(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showVoiceNoteSheet() {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final currentUser = auth.userModel;
+    if (currentUser == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        int recordedSeconds = 0;
+        bool isRecording = true;
+        Timer? recordingTimer;
+        String selectedPreset = '';
+
+        final presets = [
+          'ዋጋው ይቀነሳል? (Can you lower the price?)',
+          'የት እንገናኝ? (Where can we meet on campus?)',
+          'አሁን ይገኛል? (Is it available right now?)',
+          'በቴሌብር ልላክ? (Can I pay via Telebirr?)',
+          'እቃውን አይቼ እወስዳለሁ (I will inspect it first)',
+        ];
+
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            recordingTimer ??= Timer.periodic(const Duration(seconds: 1), (t) {
+              if (sheetContext.mounted && isRecording) {
+                setSheetState(() {
+                  recordedSeconds++;
+                });
+              }
+            });
+
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.mic, color: Colors.redAccent, size: 28),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Voice Note (የድምጽ መልእክት)',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            recordingTimer?.cancel();
+                            Navigator.pop(ctx);
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Recording indicator & pulsating circle
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.withOpacity(0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: const BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.mic, color: Colors.white, size: 36),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    const Text(
+                      'Recording Voice Note...',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.redAccent,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '0:${recordedSeconds.toString().padLeft(2, '0')}',
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Quick Amharic topic tag selector
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Optional Quick Topic / ማስታወሻ:',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: presets.map((preset) {
+                        final isSel = selectedPreset == preset;
+                        return ChoiceChip(
+                          label: Text(
+                            preset,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                              color: isSel ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          selected: isSel,
+                          selectedColor: AppConstants.primaryColor,
+                          backgroundColor: Colors.grey.shade100,
+                          onSelected: (val) {
+                            setSheetState(() {
+                              selectedPreset = val ? preset : '';
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Send Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppConstants.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: const Icon(Icons.send_rounded),
+                        label: Text(
+                          'Send Voice Note (0:${recordedSeconds.clamp(1, 99).toString().padLeft(2, '0')})',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        onPressed: () async {
+                          recordingTimer?.cancel();
+                          Navigator.pop(ctx);
+
+                          final duration = recordedSeconds < 1 ? 3 : recordedSeconds;
+                          await _chatService.sendMediaMessage(
+                            chatId: widget.chatId,
+                            senderId: currentUser.uid,
+                            type: 'voice',
+                            mediaUrl: 'simulated_audio_note',
+                            text: selectedPreset,
+                            durationSeconds: duration,
+                          );
+
+                          _scrollToBottom();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   void _scrollToBottom() {
@@ -235,9 +514,9 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
 
-          // Message input bar
+          // Message input bar with Camera, Mic, and Send
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -251,6 +530,21 @@ class _ChatScreenState extends State<ChatScreen> {
             child: SafeArea(
               child: Row(
                 children: [
+                  // Photo Attachment Button
+                  IconButton(
+                    icon: const Icon(Icons.camera_alt_outlined, color: AppConstants.primaryColor),
+                    tooltip: 'Send Photo',
+                    onPressed: _isSending ? null : _showAttachSheet,
+                  ),
+
+                  // Voice Note Button
+                  IconButton(
+                    icon: const Icon(Icons.mic_outlined, color: Colors.redAccent),
+                    tooltip: 'Send Voice Note',
+                    onPressed: _isSending ? null : _showVoiceNoteSheet,
+                  ),
+
+                  // Text input
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
@@ -263,24 +557,35 @@ class _ChatScreenState extends State<ChatScreen> {
                         maxLines: 4,
                         minLines: 1,
                         decoration: const InputDecoration(
-                          hintText: 'Type a message...',
-                          hintStyle: TextStyle(fontSize: 14, color: Colors.grey),
+                          hintText: 'Type message...',
+                          hintStyle: TextStyle(fontSize: 13.5, color: Colors.grey),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         ),
                         onSubmitted: (_) => _sendMessage(),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
+
+                  // Send button
                   Container(
                     decoration: const BoxDecoration(
                       color: AppConstants.primaryColor,
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                      onPressed: _sendMessage,
+                      icon: _isSending
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                      onPressed: _isSending ? null : _sendMessage,
                     ),
                   ),
                 ],

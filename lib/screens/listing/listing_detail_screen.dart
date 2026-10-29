@@ -21,6 +21,9 @@ import '../rating/rate_seller_screen.dart';
 import 'create_listing_screen.dart';
 import '../../services/marketplace_extension_service.dart';
 import 'boost_listing_dialog.dart';
+import '../../models/listing_question_model.dart';
+import '../../services/question_service.dart';
+import 'make_offer_dialog.dart';
 
 class ListingDetailScreen extends StatefulWidget {
   final String listingId;
@@ -36,6 +39,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   final AuthService _authService = AuthService();
   final ChatService _chatService = ChatService();
   final OrderService _orderService = OrderService();
+  final QuestionService _questionService = QuestionService();
 
   ListingModel? _listing;
   UserModel? _seller;
@@ -229,6 +233,162 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
         ),
       );
     }
+  }
+
+  void _showAskQuestionDialog() {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final currentUser = auth.userModel;
+
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in to ask a question.')),
+      );
+      return;
+    }
+
+    if (_listing == null || _seller == null) return;
+
+    final controller = TextEditingController();
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.help_outline_rounded, color: AppConstants.primaryColor),
+                SizedBox(width: 8),
+                Text('Ask a Question (ጥያቄ ጠይቅ)', style: TextStyle(fontSize: 16)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Your question will be visible publicly on this listing for the seller and other students to see.',
+                  style: TextStyle(fontSize: 12.5, color: Colors.grey),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  maxLines: 3,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. Is the battery health good? Any missing pages in textbook?',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppConstants.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        final q = controller.text.trim();
+                        if (q.isEmpty) return;
+                        final messenger = ScaffoldMessenger.of(context);
+                        setDialogState(() => isSubmitting = true);
+                        await _questionService.askQuestion(
+                          listingId: _listing!.id,
+                          sellerId: _seller!.uid,
+                          question: q,
+                          asker: currentUser,
+                        );
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        if (mounted) {
+                          messenger.showSnackBar(
+                            const SnackBar(content: Text('Your question was posted!')),
+                          );
+                        }
+                      },
+                child: Text(isSubmitting ? 'Posting...' : 'Post Question'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showAnswerQuestionDialog(ListingQuestionModel question) {
+    final controller = TextEditingController();
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Reply to Question (መልስ ስጥ)', style: TextStyle(fontSize: 16)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Q: "${question.question}"',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  maxLines: 3,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Type your answer to help buyers...',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppConstants.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        final ans = controller.text.trim();
+                        if (ans.isEmpty) return;
+                        final messenger = ScaffoldMessenger.of(context);
+                        setDialogState(() => isSubmitting = true);
+                        await _questionService.answerQuestion(
+                          questionId: question.id,
+                          answer: ans,
+                        );
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        if (mounted) {
+                          messenger.showSnackBar(
+                            const SnackBar(content: Text('Your reply has been published!')),
+                          );
+                        }
+                      },
+                child: Text(isSubmitting ? 'Replying...' : 'Post Reply'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   void _onBuyItemPressed() {
@@ -1262,6 +1422,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             ],
                           ),
                         ),
+                        // Community Q&A Section
+                        _buildQuestionsSection(listing, auth.userModel),
                         const SizedBox(height: 24),
                       ],
                     ),
@@ -1324,22 +1486,24 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         // Quick Email Button
                         Container(
                           height: 48,
-                          width: 48,
+                          width: 44,
                           decoration: BoxDecoration(
                             color: AppConstants.primaryColor.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: AppConstants.primaryColor.withOpacity(0.3)),
                           ),
                           child: IconButton(
+                            padding: EdgeInsets.zero,
                             tooltip: 'Email Seller',
-                            icon: const Icon(Icons.email_outlined, color: AppConstants.primaryColor),
+                            icon: const Icon(Icons.email_outlined, color: AppConstants.primaryColor, size: 20),
                             onPressed: _onEmailSellerPressed,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
+
                         // Chat Button with New Message Symbol / Badge
                         Expanded(
-                          flex: 4,
+                          flex: 3,
                           child: StreamBuilder<bool>(
                             stream: auth.userModel != null && _seller != null
                                 ? _chatService.hasUnreadMessageStream(
@@ -1358,18 +1522,20 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                     hasNew
                                         ? Icons.mark_chat_unread_rounded
                                         : Icons.chat_bubble_outline_rounded,
-                                    size: 16,
+                                    size: 15,
                                     color: hasNew ? Colors.redAccent : AppConstants.primaryColor,
                                   ),
                                 ),
                                 label: Text(
-                                  hasNew ? 'Chat (New)' : 'Chat',
+                                  hasNew ? 'Chat*' : 'Chat',
                                   style: TextStyle(
                                     color: hasNew ? Colors.redAccent : AppConstants.primaryColor,
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 12,
                                   ),
                                 ),
                                 style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4),
                                   side: BorderSide(
                                     color: hasNew ? Colors.redAccent : AppConstants.primaryColor,
                                     width: hasNew ? 1.5 : 1.0,
@@ -1384,12 +1550,55 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
+
+                        // Make an Offer (Bargaining) Button
+                        Expanded(
+                          flex: 4,
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.handshake_outlined, size: 16),
+                            label: const Text(
+                              'Offer 🤝',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              foregroundColor: const Color(0xFF059669),
+                              side: const BorderSide(color: Color(0xFF059669), width: 1.2),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              minimumSize: const Size(0, 48),
+                            ),
+                            onPressed: listing.isAvailable
+                                ? () {
+                                    final currentUser = auth.userModel;
+                                    if (currentUser == null) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Please log in to make an offer.')),
+                                      );
+                                      return;
+                                    }
+                                    if (_seller == null) return;
+                                    showDialog(
+                                      context: context,
+                                      builder: (ctx) => MakeOfferDialog(
+                                        listing: listing,
+                                        currentUser: currentUser,
+                                        seller: _seller!,
+                                      ),
+                                    );
+                                  }
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+
                         // Buy Item Button
                         Expanded(
-                          flex: 6,
+                          flex: 5,
                           child: CustomButton(
-                            text: listing.isAvailable ? 'Buy Item' : 'Item Sold',
+                            text: listing.isAvailable ? 'Buy Item' : 'Sold',
                             icon: Icons.shopping_bag_outlined,
                             onPressed: listing.isAvailable ? _onBuyItemPressed : null,
                           ),
@@ -1397,6 +1606,215 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       ],
                     ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuestionsSection(ListingModel listing, UserModel? currentUser) {
+    final isSeller = currentUser != null && currentUser.uid == listing.sellerId;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.question_answer_outlined, color: AppConstants.primaryColor, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Questions & Answers (ጥያቄና መልስ)',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ],
+              ),
+              if (!isSeller)
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: AppConstants.primaryColor,
+                  ),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Ask', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  onPressed: _showAskQuestionDialog,
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          StreamBuilder<List<ListingQuestionModel>>(
+            stream: _questionService.getQuestionsStream(listing.id),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(12.0),
+                    child: SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                );
+              }
+
+              final questions = snapshot.data ?? [];
+
+              if (questions.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 14.0),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Text(
+                          'No public questions asked yet.',
+                          style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                        ),
+                        if (!isSeller) ...[
+                          const SizedBox(height: 4),
+                          TextButton(
+                            onPressed: _showAskQuestionDialog,
+                            child: const Text('Have a question? Ask the seller publicly!'),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return Column(
+                children: questions.map((q) {
+                  final hasUpvoted = currentUser != null && q.upvotedUserIds.contains(currentUser.uid);
+
+                  return Container(
+                    margin: const EdgeInsets.only(top: 10),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Question Header
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Q: ',
+                              style: TextStyle(fontWeight: FontWeight.bold, color: AppConstants.primaryColor, fontSize: 14),
+                            ),
+                            Expanded(
+                              child: Text(
+                                q.question,
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
+                              ),
+                            ),
+                            InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: currentUser == null
+                                  ? null
+                                  : () => _questionService.toggleUpvote(
+                                        questionId: q.id,
+                                        userId: currentUser.uid,
+                                      ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      hasUpvoted ? Icons.thumb_up_alt_rounded : Icons.thumb_up_alt_outlined,
+                                      size: 15,
+                                      color: hasUpvoted ? AppConstants.primaryColor : Colors.grey,
+                                    ),
+                                    if (q.upvotes > 0) ...[
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${q.upvotes}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: hasUpvoted ? AppConstants.primaryColor : Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Asked by ${q.askerName} • ${DateFormat('MMM d').format(q.createdAt)}',
+                          style: TextStyle(fontSize: 10.5, color: Colors.grey.shade500),
+                        ),
+
+                        // Answer if present
+                        if (q.isAnswered) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF059669).withOpacity(0.06),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFF059669).withOpacity(0.2)),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF059669),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'Seller',
+                                    style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    q.answer!,
+                                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ] else if (isSeller) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                              icon: const Icon(Icons.reply_rounded, size: 16, color: AppConstants.primaryColor),
+                              label: const Text('Reply to Question', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              onPressed: () => _showAnswerQuestionDialog(q),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                }).toList(),
+              );
+            },
           ),
         ],
       ),

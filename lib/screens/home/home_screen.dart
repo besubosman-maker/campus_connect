@@ -20,6 +20,7 @@ import '../../providers/theme_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../admin/admin_dashboard_screen.dart';
 import '../listing/favorites_screen.dart';
+import '../requests/item_requests_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -261,6 +262,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               IconButton(
+                icon: const Icon(Icons.campaign_outlined, color: AppConstants.primaryColor),
+                tooltip: 'Wanted Board (ፈልጉልኝ)',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ItemRequestsScreen()),
+                  );
+                },
+              ),
+              IconButton(
                 icon: const Icon(Icons.receipt_long_outlined, color: AppConstants.primaryColor),
                 tooltip: 'My Orders & Sales',
                 onPressed: () {
@@ -353,6 +364,64 @@ class _HomeScreenState extends State<HomeScreen> {
                               : null,
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Wanted Board Banner
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ItemRequestsScreen()),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppConstants.primaryColor.withOpacity(0.08),
+                              Colors.purple.shade50,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppConstants.primaryColor.withOpacity(0.2)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                color: AppConstants.primaryColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.campaign, color: Colors.white, size: 16),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    locale.isAmharic ? 'የሚፈልጉትን ዕቃ ይለጥፉ (ፈልጉልኝ)' : 'Looking for an item? Wanted Board',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  ),
+                                  Text(
+                                    locale.isAmharic ? 'ተማሪዎችና ሻጮች ባጀትዎ ላይ ሆነው ያነጋግሩዎታል' : 'Post your budget & campus peers will reach out!',
+                                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppConstants.primaryColor),
+                          ],
                         ),
                       ),
                     ),
