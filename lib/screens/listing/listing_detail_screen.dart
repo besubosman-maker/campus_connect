@@ -1049,52 +1049,62 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   // Image Carousel
                   if (listing.images.isNotEmpty)
                     SizedBox(
-                      height: 280,
+                      height: 300,
                       child: Stack(
                         children: [
-                          PageView.builder(
-                            itemCount: listing.images.length,
-                            onPageChanged: (index) {
-                              setState(() {
-                                _currentImageIndex = index;
-                              });
-                            },
-                            itemBuilder: (context, index) {
-                              return AppImageHelper.buildImage(
-                                imageUrl: listing.images[index],
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                placeholder: Container(
-                                  color: Colors.grey[200],
-                                  child: const Center(child: CircularProgressIndicator()),
-                                ),
-                                errorWidget: Container(
-                                  color: Colors.grey[200],
-                                  child: const Icon(Icons.broken_image, size: 60, color: Colors.grey),
-                                ),
-                              );
-                            },
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+                            child: PageView.builder(
+                              itemCount: listing.images.length,
+                              onPageChanged: (index) {
+                                setState(() {
+                                  _currentImageIndex = index;
+                                });
+                              },
+                              itemBuilder: (context, index) {
+                                return AppImageHelper.buildImage(
+                                  imageUrl: listing.images[index],
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  placeholder: Container(
+                                    color: Colors.grey[200],
+                                    child: const Center(child: CircularProgressIndicator()),
+                                  ),
+                                  errorWidget: Container(
+                                    color: Colors.grey[200],
+                                    child: const Icon(Icons.broken_image, size: 60, color: Colors.grey),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
 
                           // Indicator Dots
                           if (listing.images.length > 1)
                             Positioned(
-                              bottom: 12,
+                              bottom: 14,
                               left: 0,
                               right: 0,
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: List.generate(
                                   listing.images.length,
-                                  (dotIndex) => Container(
+                                  (dotIndex) => AnimatedContainer(
+                                    duration: const Duration(milliseconds: 250),
                                     margin: const EdgeInsets.symmetric(horizontal: 3),
-                                    width: _currentImageIndex == dotIndex ? 18 : 7,
-                                    height: 7,
+                                    width: _currentImageIndex == dotIndex ? 22 : 6,
+                                    height: 6,
                                     decoration: BoxDecoration(
                                       color: _currentImageIndex == dotIndex
-                                          ? AppConstants.primaryColor
-                                          : Colors.white.withOpacity(0.7),
-                                      borderRadius: BorderRadius.circular(4),
+                                          ? Colors.white
+                                          : Colors.white.withOpacity(0.5),
+                                      borderRadius: BorderRadius.circular(3),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.25),
+                                          blurRadius: 4,
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -1111,6 +1121,12 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                 decoration: BoxDecoration(
                                   color: Colors.redAccent,
                                   borderRadius: BorderRadius.circular(8),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      blurRadius: 6,
+                                    ),
+                                  ],
                                 ),
                                 child: const Text(
                                   'ITEM SOLD',
@@ -1168,7 +1184,10 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   else
                     Container(
                       height: 200,
-                      color: Colors.grey[100],
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+                      ),
                       child: const Center(
                         child: Icon(Icons.shopping_bag_outlined, size: 64, color: Colors.grey),
                       ),
@@ -1182,44 +1201,85 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         // Price & Category Row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text(
-                              currencyFormat.format(listing.price),
-                              style: const TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                                color: AppConstants.primaryColor,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  currencyFormat.format(listing.price),
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF059669),
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: listing.isAvailable ? const Color(0xFF059669) : Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      listing.isAvailable ? 'Available on Campus' : 'Item Sold',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: listing.isAvailable ? const Color(0xFF059669) : Colors.red,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(
-                                color: AppConstants.primaryColor.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(16),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppConstants.primaryColor.withOpacity(0.1),
+                                    AppConstants.primaryColor.withOpacity(0.04),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: AppConstants.primaryColor.withOpacity(0.2),
                                 ),
                               ),
-                              child: Text(
-                                listing.category,
-                                style: const TextStyle(
-                                  color: AppConstants.primaryColor,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.tag_rounded, size: 14, color: AppConstants.primaryColor),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    listing.category,
+                                    style: const TextStyle(
+                                      color: AppConstants.primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 14),
 
                         // Title
                         Text(
                           listing.title,
                           style: const TextStyle(
-                            fontSize: 20,
+                            fontSize: 21,
                             fontWeight: FontWeight.bold,
                             height: 1.25,
+                            letterSpacing: -0.3,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -1266,26 +1326,42 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         ),
                         const SizedBox(height: 12),
                         Container(
-                          padding: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.grey.shade200),
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: AppConstants.primaryColor.withOpacity(0.12)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.03),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
-                                  CircleAvatar(
-                                    radius: 26,
-                                    backgroundColor: AppConstants.primaryColor.withOpacity(0.1),
-                                    backgroundImage: _seller?.photoUrl != null
-                                        ? AppImageHelper.getImageProvider(_seller!.photoUrl!)
-                                        : null,
-                                    child: _seller?.photoUrl == null
-                                        ? const Icon(Icons.person, color: AppConstants.primaryColor, size: 28)
-                                        : null,
+                                  Container(
+                                    padding: const EdgeInsets.all(2.5),
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: LinearGradient(
+                                        colors: [AppConstants.primaryColor, Color(0xFF3B82F6)],
+                                      ),
+                                    ),
+                                    child: CircleAvatar(
+                                      radius: 26,
+                                      backgroundColor: Colors.white,
+                                      backgroundImage: _seller?.photoUrl != null
+                                          ? AppImageHelper.getImageProvider(_seller!.photoUrl!)
+                                          : null,
+                                      child: _seller?.photoUrl == null
+                                          ? const Icon(Icons.person, color: AppConstants.primaryColor, size: 28)
+                                          : null,
+                                    ),
                                   ),
                                   const SizedBox(width: 14),
                                   Expanded(
@@ -1305,23 +1381,23 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                             ),
                                             if (_seller?.isIdVerified == true || _seller?.isVerifiedSeller == true)
                                               Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                                 decoration: BoxDecoration(
                                                   color: Colors.green.shade50,
-                                                  borderRadius: BorderRadius.circular(4),
+                                                  borderRadius: BorderRadius.circular(6),
                                                   border: Border.all(color: Colors.green.shade300),
                                                 ),
                                                 child: Row(
                                                   mainAxisSize: MainAxisSize.min,
                                                   children: [
                                                     const Icon(Icons.verified, color: Colors.green, size: 13),
-                                                    const SizedBox(width: 3),
+                                                    const SizedBox(width: 4),
                                                     Text(
-                                                      'ID Verified',
+                                                      'Verified',
                                                       style: TextStyle(
                                                         color: Colors.green.shade900,
                                                         fontWeight: FontWeight.bold,
-                                                        fontSize: 10,
+                                                        fontSize: 10.5,
                                                       ),
                                                     ),
                                                   ],
@@ -1349,9 +1425,9 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                 ],
                               ),
                               if (!isOwner) ...[
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 14),
                                 const Divider(height: 1),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 12),
                                 // Instant Direct Contact Options (Phone Call & Telegram)
                                 Row(
                                   children: [
@@ -1362,6 +1438,10 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: const Color(0xFF059669),
                                           foregroundColor: Colors.white,
+                                          elevation: 1,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
                                           visualDensity: VisualDensity.compact,
                                         ),
                                         onPressed: () {
@@ -1384,6 +1464,10 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: const Color(0xFF0284C7),
                                           foregroundColor: Colors.white,
+                                          elevation: 1,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
                                           visualDensity: VisualDensity.compact,
                                         ),
                                         onPressed: () {
@@ -1409,6 +1493,10 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                         label: const Text('Email Seller'),
                                         style: OutlinedButton.styleFrom(
                                           foregroundColor: AppConstants.primaryColor,
+                                          side: BorderSide(color: AppConstants.primaryColor.withOpacity(0.3)),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
                                           visualDensity: VisualDensity.compact,
                                         ),
                                         onPressed: _onEmailSellerPressed,
@@ -1421,6 +1509,10 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                         label: const Text('Rate Seller'),
                                         style: OutlinedButton.styleFrom(
                                           foregroundColor: Colors.amber.shade800,
+                                          side: BorderSide(color: Colors.amber.shade400),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
                                           visualDensity: VisualDensity.compact,
                                         ),
                                         onPressed: _onRateSellerPressed,

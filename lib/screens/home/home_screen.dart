@@ -149,6 +149,52 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildHeroFeatureBadge(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10.5,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  String _getCategoryEmoji(String cat) {
+    switch (cat) {
+      case 'All':
+        return '🔥 All';
+      case 'Electronics & Phones':
+        return '📱 Electronics';
+      case 'Home & Furniture':
+        return '🛋️ Furniture';
+      case 'Fashion & Clothing':
+        return '👗 Fashion';
+      case 'Vehicles & Auto':
+        return '🚗 Vehicles';
+      case 'Property & Rentals':
+        return '🏠 Rentals';
+      case 'Services & Skills':
+        return '💼 Services';
+      case 'Books & Education':
+        return '📚 Books';
+      case 'Jobs & Gigs':
+        return '⚡ Gigs';
+      case 'Free & Donations':
+        return '🎁 Free';
+      default:
+        return '✨ $cat';
+    }
+  }
+
   Widget _buildBrowseTab() {
     return Consumer<ListingProvider>(
       builder: (context, listingProvider, _) {
@@ -359,21 +405,121 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
 
+                // Hero Marketplace Welcome Banner
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1E3A8A), Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF1E3A8A).withOpacity(0.28),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          right: -10,
+                          bottom: -15,
+                          child: Icon(
+                            Icons.storefront_rounded,
+                            size: 110,
+                            color: Colors.white.withOpacity(0.08),
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.18),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.white.withOpacity(0.3)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text('🇪🇹', style: TextStyle(fontSize: 12)),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    locale.isAmharic ? 'የኢትዮጵያ ካምፓስ ገበያ' : '#1 Ethiopian Campus Marketplace',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              locale.isAmharic ? 'በቀላሉ ይግዙና ይሽጡ 🎓' : 'Buy & Sell Across Campus 🎓',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              locale.isAmharic
+                                  ? 'ከተረጋገጡ ተማሪዎችና ሻጮች ጋር በቀጥታ ይደራደሩና ይገበያዩ'
+                                  : 'Connect with verified students, bargain live, and meet safely.',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.85),
+                                fontSize: 12,
+                                height: 1.35,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 6,
+                              children: [
+                                _buildHeroFeatureBadge('⚡ Instant Chat'),
+                                _buildHeroFeatureBadge('🤝 Live Bargain'),
+                                _buildHeroFeatureBadge('🛡️ Telebirr / CBE'),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
                 // Search Bar Section
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
                     child: Container(
                       decoration: BoxDecoration(
                         color: cardColor,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.04),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
                           ),
                         ],
+                        border: Border.all(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white.withOpacity(0.08)
+                              : Colors.grey.shade200,
+                        ),
                       ),
                       child: TextField(
                         controller: _searchController,
@@ -381,12 +527,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           listingProvider.setSearchQuery(val);
                         },
                         decoration: InputDecoration(
-                          hintText: 'Search electronics, home goods, vehicles, fashion...',
-                          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                          hintText: locale.isAmharic
+                              ? 'ስልኮች፣ ላፕቶፖች፣ መጽሐፍት፣ አልባሳት ይፈልጉ...'
+                              : 'Search electronics, laptops, textbooks, fashion...',
+                          hintStyle: TextStyle(
+                            color: Theme.of(context).hintColor.withOpacity(0.7),
+                            fontSize: 13.5,
+                          ),
+                          prefixIcon: const Icon(Icons.search_rounded, color: AppConstants.primaryColor, size: 22),
                           suffixIcon: _searchController.text.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(Icons.clear, size: 18),
+                                  icon: const Icon(Icons.cancel_rounded, size: 18, color: Colors.grey),
                                   onPressed: () {
                                     _searchController.clear();
                                     listingProvider.setSearchQuery('');
@@ -412,46 +563,88 @@ class _HomeScreenState extends State<HomeScreen> {
                           MaterialPageRoute(builder: (context) => const ItemRequestsScreen()),
                         );
                       },
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppConstants.primaryColor.withOpacity(0.08),
-                              Colors.purple.shade50,
-                            ],
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppConstants.primaryColor.withOpacity(0.2)),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF4F46E5).withOpacity(0.25),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
-                                color: AppConstants.primaryColor,
+                              padding: const EdgeInsets.all(9),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.campaign, color: Colors.white, size: 16),
+                              child: const Icon(Icons.campaign_rounded, color: Colors.white, size: 20),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    locale.isAmharic ? 'የሚፈልጉትን ዕቃ ይለጥፉ (ፈልጉልኝ)' : 'Looking for an item? Wanted Board',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        locale.isAmharic ? 'የሚፈልጉትን ዕቃ ይለጥፉ' : 'Wanted Board (ፈልጉልኝ)',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13.5,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.amberAccent,
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: const Text(
+                                          'HOT 🔥',
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
+                                  const SizedBox(height: 2),
                                   Text(
-                                    locale.isAmharic ? 'ተማሪዎችና ሻጮች ባጀትዎ ላይ ሆነው ያነጋግሩዎታል' : 'Post your budget & campus peers will reach out!',
-                                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                    locale.isAmharic
+                                        ? 'የሚፈልጉትን ዕቃና ባጀት ይለጥፉ፡ ሻጮች ያነጋግሩዎታል'
+                                        : 'Post your budget & campus peers will reach out!',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.white.withOpacity(0.85),
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppConstants.primaryColor),
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
+                            ),
                           ],
                         ),
                       ),
@@ -471,29 +664,50 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemBuilder: (context, index) {
                         final cat = AppConstants.categories[index];
                         final isSelected = listingProvider.selectedCategory == cat;
-                        return ChoiceChip(
-                          label: Text(cat),
-                          selected: isSelected,
-                          selectedColor: AppConstants.primaryColor,
-                          labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black87),
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            fontSize: 13,
-                          ),
-                          backgroundColor: cardColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            side: BorderSide(
-                              color: isSelected
-                                  ? AppConstants.primaryColor
-                                  : Colors.grey.shade300,
+                        return InkWell(
+                          onTap: () => listingProvider.setCategory(cat),
+                          borderRadius: BorderRadius.circular(24),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              gradient: isSelected
+                                  ? const LinearGradient(
+                                      colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                                    )
+                                  : null,
+                              color: isSelected ? null : cardColor,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: isSelected
+                                    ? Colors.transparent
+                                    : (Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.white.withOpacity(0.1)
+                                        : Colors.grey.shade300),
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF2563EB).withOpacity(0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Center(
+                              child: Text(
+                                _getCategoryEmoji(cat),
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black87),
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                  fontSize: 12.5,
+                                ),
+                              ),
                             ),
                           ),
-                          onSelected: (selected) {
-                            if (selected) {
-                              listingProvider.setCategory(cat);
-                            }
-                          },
                         );
                       },
                     ),

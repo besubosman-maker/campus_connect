@@ -39,6 +39,27 @@ class _ItemRequestsScreenState extends State<ItemRequestsScreen> {
     'Other',
   ];
 
+  String _getReqCategoryEmoji(String cat) {
+    switch (cat) {
+      case 'All':
+        return '🔥 All';
+      case 'Textbooks & Study Materials':
+        return '📚 Textbooks';
+      case 'Electronics & Gadgets':
+        return '💻 Gadgets';
+      case 'Dorm & Room Essentials':
+        return '🛋️ Dorm Life';
+      case 'Clothing & Fashion':
+        return '👗 Fashion';
+      case 'Sports & Fitness':
+        return '⚽ Sports';
+      case 'Services & Tutoring':
+        return '💼 Tutoring';
+      default:
+        return '✨ $cat';
+    }
+  }
+
   void _openChatWithRequester(ItemRequestModel request) async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final currentUser = auth.userModel;
@@ -361,26 +382,48 @@ class _ItemRequestsScreenState extends State<ItemRequestsScreen> {
           // Category selector bar
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: _categories.map((cat) {
                 final isSelected = _selectedCategory == cat;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(cat),
-                    selected: isSelected,
-                    selectedColor: AppConstants.primaryColor.withOpacity(0.18),
-                    labelStyle: TextStyle(
-                      color: isSelected ? AppConstants.primaryColor : Colors.black87,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 12,
+                  child: InkWell(
+                    onTap: () => setState(() => _selectedCategory = cat),
+                    borderRadius: BorderRadius.circular(24),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                      decoration: BoxDecoration(
+                        gradient: isSelected
+                            ? const LinearGradient(
+                                colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+                              )
+                            : null,
+                        color: isSelected ? null : Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: isSelected ? Colors.transparent : Colors.grey.shade300,
+                        ),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: const Color(0xFF4F46E5).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Text(
+                        _getReqCategoryEmoji(cat),
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black87,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
-                    onSelected: (val) {
-                      setState(() {
-                        _selectedCategory = cat;
-                      });
-                    },
                   ),
                 );
               }).toList(),
@@ -422,15 +465,24 @@ class _ItemRequestsScreenState extends State<ItemRequestsScreen> {
                     final isMyRequest = currentUserId == req.userId;
                     final timeAgo = DateFormat('MMM d, y').format(req.createdAt);
 
-                    return Card(
-                      elevation: 1.5,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(
-                          color: isMyRequest ? AppConstants.primaryColor.withOpacity(0.4) : Colors.grey.shade200,
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: isMyRequest
+                              ? AppConstants.primaryColor.withOpacity(0.4)
+                              : Colors.grey.shade200,
                           width: isMyRequest ? 1.5 : 1,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
@@ -441,22 +493,34 @@ class _ItemRequestsScreenState extends State<ItemRequestsScreen> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                CircleAvatar(
-                                  radius: 18,
-                                  backgroundColor: AppConstants.primaryColor.withOpacity(0.1),
-                                  child: req.userAvatar != null
-                                      ? ClipOval(
-                                          child: AppImageHelper.buildImage(
-                                            imageUrl: req.userAvatar!,
-                                            height: 36,
-                                            width: 36,
-                                            fit: BoxFit.cover,
+                                Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+                                    ),
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: Colors.white,
+                                    child: req.userAvatar != null
+                                        ? ClipOval(
+                                            child: AppImageHelper.buildImage(
+                                              imageUrl: req.userAvatar!,
+                                              height: 36,
+                                              width: 36,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          )
+                                        : Text(
+                                            req.userName.isNotEmpty ? req.userName[0].toUpperCase() : 'S',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF4F46E5),
+                                            ),
                                           ),
-                                        )
-                                      : Text(
-                                          req.userName.isNotEmpty ? req.userName[0].toUpperCase() : 'S',
-                                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppConstants.primaryColor),
-                                        ),
+                                  ),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -479,7 +543,11 @@ class _ItemRequestsScreenState extends State<ItemRequestsScreen> {
                                               ),
                                               child: const Text(
                                                 'You',
-                                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppConstants.primaryColor),
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: AppConstants.primaryColor,
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -493,24 +561,29 @@ class _ItemRequestsScreenState extends State<ItemRequestsScreen> {
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF059669).withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(10),
+                                    color: const Color(0xFFECFDF5),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: const Color(0xFFA7F3D0)),
                                   ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       const Text(
-                                        'Budget',
-                                        style: TextStyle(fontSize: 10, color: Color(0xFF059669), fontWeight: FontWeight.w600),
+                                        'Max Budget',
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          color: Color(0xFF047857),
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                       Text(
                                         currencyFormat.format(req.budgetETB),
                                         style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF059669),
+                                          fontSize: 14.5,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFF065F46),
                                         ),
                                       ),
                                     ],
@@ -518,34 +591,39 @@ class _ItemRequestsScreenState extends State<ItemRequestsScreen> {
                                 ),
                               ],
                             ),
-                            const Divider(height: 20),
+                            const Divider(height: 22),
 
                             // Item title & description
                             Text(
                               req.title,
                               style: const TextStyle(
-                                fontSize: 16,
+                                fontSize: 16.5,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black87,
+                                letterSpacing: -0.2,
                               ),
                             ),
                             const SizedBox(height: 6),
                             Text(
                               req.description,
-                              style: TextStyle(fontSize: 13.5, color: Colors.grey.shade700, height: 1.3),
+                              style: TextStyle(fontSize: 13.5, color: Colors.grey.shade700, height: 1.35),
                             ),
                             const SizedBox(height: 10),
 
                             // Category tag
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(6),
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 '🏷️ ${req.category}',
-                                style: TextStyle(fontSize: 11, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade700,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 14),
@@ -560,6 +638,9 @@ class _ItemRequestsScreenState extends State<ItemRequestsScreen> {
                                       label: const Text('Mark as Found', style: TextStyle(fontSize: 12, color: Colors.green)),
                                       style: OutlinedButton.styleFrom(
                                         side: const BorderSide(color: Colors.green),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
                                       ),
                                       onPressed: () async {
                                         await _requestService.updateStatus(req.id, 'fulfilled');
@@ -582,21 +663,35 @@ class _ItemRequestsScreenState extends State<ItemRequestsScreen> {
                                 ],
                               ),
                             ] else ...[
-                              SizedBox(
+                              Container(
                                 width: double.infinity,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
                                 child: ElevatedButton.icon(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppConstants.primaryColor,
+                                    backgroundColor: Colors.transparent,
+                                    shadowColor: Colors.transparent,
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
                                   ),
                                   icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
                                   label: const Text(
                                     'I Have This! / አለኝ (አናግር)',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                                   ),
                                   onPressed: () => _openChatWithRequester(req),
                                 ),
