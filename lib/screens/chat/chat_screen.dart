@@ -11,6 +11,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/chat_service.dart';
 import '../../widgets/chat_bubble.dart';
 import '../../widgets/loading_indicator.dart';
+import '../../widgets/report_dialog.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatId;
@@ -418,6 +419,23 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.outlined_flag_rounded, color: Colors.black54),
+            tooltip: 'Report User',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => ReportDialog(
+                  targetType: 'user',
+                  targetId: widget.otherUser.uid,
+                  targetTitle: widget.otherUser.name,
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: Column(
         children: [

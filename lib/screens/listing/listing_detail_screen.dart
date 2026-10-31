@@ -25,6 +25,7 @@ import '../../models/listing_question_model.dart';
 import '../../services/question_service.dart';
 import '../../services/notification_service.dart';
 import 'make_offer_dialog.dart';
+import '../../widgets/report_dialog.dart';
 
 class ListingDetailScreen extends StatefulWidget {
   final String listingId;
@@ -947,6 +948,21 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
               );
             },
           ),
+          if (!isOwner)
+            IconButton(
+              icon: const Icon(Icons.outlined_flag_rounded, color: Colors.grey),
+              tooltip: 'Report Listing (አሳውቅ)',
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => ReportDialog(
+                    targetType: 'listing',
+                    targetId: listing.id,
+                    targetTitle: listing.title,
+                  ),
+                );
+              },
+            ),
           if (isOwner)
             PopupMenuButton<String>(
               onSelected: (val) async {

@@ -5,12 +5,14 @@ import '../../constants/app_constants.dart';
 import '../../models/rating_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/locale_provider.dart';
 import '../../services/rating_service.dart';
 import '../../widgets/app_image_helper.dart';
 import '../../widgets/rating_stars.dart';
 import '../listing/my_listings_screen.dart';
 import '../order/orders_screen.dart';
 import 'edit_profile_screen.dart';
+import 'verify_id_dialog.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -19,6 +21,7 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final locale = Provider.of<LocaleProvider>(context);
     final user = auth.userModel;
     final ratingService = RatingService();
     final theme = Theme.of(context);
@@ -146,6 +149,95 @@ class ProfileScreen extends StatelessWidget {
                       ],
                     ),
                   ],
+
+                  // ID Verification Status Badge
+                  if (user.isIdVerified)
+                    Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.green.shade300),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.verified_user_rounded, color: Colors.green, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            locale.tr('id_verified_badge'),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green.shade900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (user.idVerificationStatus == 'pending')
+                    Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.amber.shade300),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.pending_actions_rounded, color: Colors.amber, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            locale.tr('id_pending'),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.amber.shade900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    InkWell(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => VerifyIdDialog(user: user),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        margin: const EdgeInsets.only(top: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppConstants.primaryColor.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppConstants.primaryColor.withOpacity(0.25)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.shield_outlined, color: AppConstants.primaryColor, size: 16),
+                            const SizedBox(width: 6),
+                            Text(
+                              locale.tr('upload_id'),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppConstants.primaryColor,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.arrow_forward_ios_rounded, size: 11, color: AppConstants.primaryColor),
+                          ],
+                        ),
+                      ),
+                    ),
+
                   const SizedBox(height: 12),
                   Text(
                     'Community member since ${DateFormat('MMMM y').format(user.joinedAt)}',
@@ -166,6 +258,26 @@ class ProfileScreen extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
+                  ListTile(
+                    leading: const Icon(Icons.verified_user_outlined, color: AppConstants.primaryColor),
+                    title: Text(locale.tr('verify_id')),
+                    subtitle: Text(
+                      user.isIdVerified
+                          ? 'Verified Student / Seller Profile'
+                          : user.idVerificationStatus == 'pending'
+                              ? 'Verification in progress'
+                              : 'Tap to upload Kebele or Student ID',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => VerifyIdDialog(user: user),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1, indent: 56),
                   ListTile(
                     leading: const Icon(Icons.inventory_2_outlined, color: AppConstants.primaryColor),
                     title: const Text('My Items for Sale'),

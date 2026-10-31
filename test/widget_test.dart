@@ -8,6 +8,7 @@ import 'package:campus_connect/models/listing_question_model.dart';
 import 'package:campus_connect/models/item_request_model.dart';
 import 'package:campus_connect/models/message_model.dart';
 import 'package:campus_connect/models/notification_model.dart';
+import 'package:campus_connect/models/report_model.dart';
 import 'package:campus_connect/providers/locale_provider.dart';
 import 'package:campus_connect/providers/theme_provider.dart';
 import 'package:campus_connect/widgets/rating_stars.dart';
@@ -219,5 +220,26 @@ void main() {
     expect(notif.isRead, isFalse);
     expect(notif.type, 'offer');
     expect(notif.targetId, 'listing-123');
+  });
+
+  test('ReportModel serializes toMap correctly with pending status', () {
+    final report = ReportModel(
+      id: 'rep-1',
+      reporterId: 'user-reporter',
+      reporterName: 'Selam',
+      targetType: 'listing',
+      targetId: 'list-456',
+      targetTitle: 'Questionable Textbook',
+      reason: 'Counterfeit Item',
+      details: 'Photocopied book sold as original',
+      createdAt: DateTime.now(),
+      status: 'pending',
+    );
+
+    expect(report.status, 'pending');
+    expect(report.targetType, 'listing');
+    final map = report.toMap();
+    expect(map['reason'], 'Counterfeit Item');
+    expect(map['targetTitle'], 'Questionable Textbook');
   });
 }

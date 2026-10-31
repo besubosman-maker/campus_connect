@@ -4,7 +4,9 @@ import '../../constants/app_constants.dart';
 import '../../models/listing_model.dart';
 import '../../models/order_model.dart';
 import '../../models/user_model.dart';
+import '../../models/report_model.dart';
 import '../../services/admin_service.dart';
+import '../../services/report_service.dart';
 import '../../widgets/app_image_helper.dart';
 import '../../widgets/rating_stars.dart';
 
@@ -19,6 +21,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final AdminService _adminService = AdminService();
+  final ReportService _reportService = ReportService();
 
   // Search controllers
   final TextEditingController _userSearchController = TextEditingController();
@@ -27,11 +30,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   String _userSearchQuery = '';
   String _listingSearchQuery = '';
   String _orderFilter = 'all'; // 'all', 'disputed', 'verified', 'pending'
+  String _reportFilter = 'pending'; // 'pending', 'all'
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _userSearchController.addListener(() {
       setState(() {
         _userSearchQuery = _userSearchController.text.trim().toLowerCase();
@@ -96,6 +100,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           tabs: const [
             Tab(icon: Icon(Icons.dashboard_rounded), text: 'Overview'),
             Tab(icon: Icon(Icons.gavel_rounded), text: 'Disputes & Orders'),
+            Tab(icon: Icon(Icons.flag_rounded), text: 'Reports & Flags'),
             Tab(icon: Icon(Icons.inventory_2_rounded), text: 'Listings'),
             Tab(icon: Icon(Icons.manage_accounts_rounded), text: 'Users & Roles'),
           ],
@@ -106,6 +111,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         children: [
           _buildOverviewTab(isDark),
           _buildDisputesOrdersTab(isDark),
+          _buildReportsTab(isDark),
           _buildListingsTab(isDark),
           _buildUsersTab(isDark),
         ],
@@ -702,6 +708,306 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     }
   }
 
+  // ================= TAB: REPORTS & CONTENT MODERATION =================
+  Widget _buildReportsTab(bool isDark) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              FilterChip(
+                label: const Text('Pending Moderation'),
+                selected: _reportFilter == 'pending',
+                onSelected: (val) {
+                  setState(() {
+                    _reportFilter = val ? 'pending' : 'all';
+                  });
+                },
+                selectedColor: Colors.amber.shade100,
+                checkmarkColor: Colors.amber.shade900,
+              ),
+              const SizedBox(width: 8),
+              FilterChip(
+                label: const Text('All Reports'),
+                selected: _reportFilter == 'all',
+                onSelected: (val) {
+                  setState(() {
+                    _reportFilter = val ? 'all' : 'pending';
+                  });
+                },
+                selectedColor: Colors.blue.shade100,
+                checkmarkColor: Colors.blue.shade900,
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<List<ReportModel>>(
+            stream: _reportService.getReportsStream(
+              status: _reportFilter,
+            ),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final reports = snapshot.data ?? [];
+              if (reports.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.verified_user_rounded, size: 64, color: Colors.green.shade400),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'No Flagged Reports',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _reportFilter == 'pending'
+                            ? 'All student and marketplace listings are clean.'
+                            : 'No reports found in history.',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                itemCount: reports.length,
+                itemBuilder: (context, index) {
+                  final report = reports[index];
+                  final isPending = report.status == 'pending';
+                  final isListing = report.targetType == 'listing';
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      side: BorderSide(
+                        color: isPending ? Colors.redAccent.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: isListing ? Colors.deepPurple.shade50 : Colors.orange.shade50,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: isListing ? Colors.deepPurple.shade200 : Colors.orange.shade200,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isListing ? Icons.inventory_2_outlined : Icons.person_outline,
+                                      size: 14,
+                                      color: isListing ? Colors.deepPurple : Colors.orange.shade800,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      isListing ? 'LISTING' : 'USER',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: isListing ? Colors.deepPurple : Colors.orange.shade800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: isPending ? Colors.red.shade50 : Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  report.status.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: isPending ? Colors.red.shade800 : Colors.green.shade800,
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                DateFormat('MMM dd, yyyy').format(report.createdAt),
+                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            report.targetTitle,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, size: 18, color: Colors.amber),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    report.reason,
+                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (report.details.trim().isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'Details: "${report.details}"',
+                              style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 13),
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          Text(
+                            'Reported by: ${report.reporterName} (ID: ${report.reporterId.length > 8 ? report.reporterId.substring(0, 8) : report.reporterId})',
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          const Divider(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              if (isPending) ...[
+                                TextButton.icon(
+                                  icon: const Icon(Icons.close_rounded, size: 16, color: Colors.grey),
+                                  label: const Text('Dismiss', style: TextStyle(color: Colors.grey)),
+                                  onPressed: () async {
+                                    await _reportService.updateReportStatus(report.id, 'dismissed');
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Report dismissed')),
+                                      );
+                                    }
+                                  },
+                                ),
+                                const SizedBox(width: 8),
+                                if (isListing)
+                                  OutlinedButton.icon(
+                                    icon: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                                    label: const Text('Delete Item', style: TextStyle(color: Colors.red)),
+                                    onPressed: () async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (c) => AlertDialog(
+                                          title: const Text('Delete Reported Listing?'),
+                                          content: Text('Remove "${report.targetTitle}" from marketplace?'),
+                                          actions: [
+                                            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                              onPressed: () => Navigator.pop(c, true),
+                                              child: const Text('Delete'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm == true) {
+                                        await _adminService.deleteListingAdmin(report.targetId);
+                                        await _reportService.updateReportStatus(report.id, 'resolved');
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Listing deleted and report resolved')),
+                                          );
+                                        }
+                                      }
+                                    },
+                                  )
+                                else
+                                  OutlinedButton.icon(
+                                    icon: const Icon(Icons.block, size: 16, color: Colors.red),
+                                    label: const Text('Ban User', style: TextStyle(color: Colors.red)),
+                                    onPressed: () async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (c) => AlertDialog(
+                                          title: const Text('Ban Reported User?'),
+                                          content: Text('Suspend "${report.targetTitle}" from platform?'),
+                                          actions: [
+                                            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                              onPressed: () => Navigator.pop(c, true),
+                                              child: const Text('Ban'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm == true) {
+                                        await _adminService.toggleBanUser(report.targetId, true);
+                                        await _reportService.updateReportStatus(report.id, 'resolved');
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('User banned and report resolved')),
+                                          );
+                                        }
+                                      }
+                                    },
+                                  ),
+                                const SizedBox(width: 8),
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.check_circle_outline, size: 16),
+                                  label: const Text('Resolve'),
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                                  onPressed: () async {
+                                    await _reportService.updateReportStatus(report.id, 'resolved');
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Report marked as resolved')),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ] else ...[
+                                Chip(
+                                  label: Text('Marked ${report.status}'),
+                                  backgroundColor: report.status == 'resolved' ? Colors.green.shade50 : Colors.grey.shade200,
+                                  labelStyle: TextStyle(
+                                    color: report.status == 'resolved' ? Colors.green.shade800 : Colors.grey.shade700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   // ================= TAB 3: LISTINGS MODERATION =================
   Widget _buildListingsTab(bool isDark) {
     return Column(
@@ -1008,6 +1314,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                 SnackBar(content: Text('ID submission rejected for ${user.name}.')),
                               );
                             }
+                          } else if (val == 'view_id_doc') {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: Text('${user.name} - ID Document'),
+                                content: AppImageHelper.buildImage(
+                                  imageUrl: user.idDocumentUrl!,
+                                  height: 260,
+                                  width: 320,
+                                  fit: BoxFit.contain,
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('Close'),
+                                  ),
+                                ],
+                              ),
+                            );
                           } else if (val == 'toggle_ban') {
                             await _adminService.toggleBanUser(user.uid, !user.isBanned);
                           } else if (val == 'toggle_verify') {
@@ -1021,6 +1346,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           }
                         },
                         itemBuilder: (context) => [
+                          if (user.idDocumentUrl != null && user.idDocumentUrl!.isNotEmpty) ...[
+                            const PopupMenuItem(
+                              value: 'view_id_doc',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.image_search_rounded, size: 18, color: Colors.blue),
+                                  SizedBox(width: 8),
+                                  Text('Inspect ID Document', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
+                          ],
                           if (user.idVerificationStatus == 'pending') ...[
                             const PopupMenuItem(
                               value: 'verify_id',
