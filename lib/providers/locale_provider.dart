@@ -88,6 +88,8 @@ class LocaleProvider extends ChangeNotifier {
       'id_pending': 'Pending Admin Review ⏳',
       'id_verified_badge': 'Verified Student/Seller 🛡️',
       'id_unverified': 'Not Verified (Tap to Verify)',
+      'menu_bar': 'Menu Bar',
+      'safety_guidelines': 'Campus Safety Guidelines',
     },
     'am': {
       'browse': 'ዕቃዎች',
@@ -125,6 +127,8 @@ class LocaleProvider extends ChangeNotifier {
       'id_pending': 'በአድሚን እየተገመገመ ነው ⏳',
       'id_verified_badge': 'የተረጋገጠ ተማሪ/ሻጭ 🛡️',
       'id_unverified': 'ያልተረጋገጠ (ለማረጋገጥ ይንኩ)',
+      'menu_bar': 'የምናሌ አሞሌ',
+      'safety_guidelines': 'የካምፓስ ደህንነት ደንቦች',
     },
   };
 

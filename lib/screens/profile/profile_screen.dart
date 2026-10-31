@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../services/rating_service.dart';
+import '../../widgets/app_drawer.dart';
 import '../../widgets/app_image_helper.dart';
 import '../../widgets/rating_stars.dart';
 import '../listing/my_listings_screen.dart';
@@ -34,7 +35,15 @@ class ProfileScreen extends StatelessWidget {
     }
 
     return Scaffold(
+      drawer: const AppDrawer(currentTabIndex: 3),
       appBar: AppBar(
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: AppConstants.primaryColor),
+            tooltip: 'Menu Bar',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: const Text('My Profile'),
         actions: [
           IconButton(

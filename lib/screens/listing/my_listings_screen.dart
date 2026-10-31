@@ -7,6 +7,7 @@ import '../../models/listing_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/listing_provider.dart';
 import '../../services/listing_service.dart';
+import '../../widgets/app_drawer.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/loading_indicator.dart';
 import 'create_listing_screen.dart';
@@ -52,7 +53,15 @@ class _MyListingsScreenState extends State<MyListingsScreen>
 
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
+      drawer: const AppDrawer(currentTabIndex: 2),
       appBar: AppBar(
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: AppConstants.primaryColor),
+            tooltip: 'Menu Bar',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: const Text('My Listings'),
         bottom: TabBar(
           controller: _tabController,

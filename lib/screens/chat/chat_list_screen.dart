@@ -8,6 +8,7 @@ import '../../models/chat_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/chat_service.dart';
+import '../../widgets/app_drawer.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/loading_indicator.dart';
 import 'chat_screen.dart';
@@ -35,7 +36,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
+      drawer: const AppDrawer(currentTabIndex: 1),
       appBar: AppBar(
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: AppConstants.primaryColor),
+            tooltip: 'Menu Bar',
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: const Text('Messages & Chats'),
       ),
       body: StreamBuilder<List<ChatModel>>(

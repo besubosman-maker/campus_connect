@@ -23,6 +23,9 @@ import '../listing/favorites_screen.dart';
 import '../requests/item_requests_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../../services/notification_service.dart';
+import '../../widgets/app_drawer.dart';
+import '../admin/admin_login_screen.dart';
+import '../profile/verify_id_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -76,6 +79,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final currentUserId = auth.userModel?.uid;
 
     return Scaffold(
+      drawer: AppDrawer(
+        currentTabIndex: _currentTabIndex,
+        onSelectTab: (index) {
+          setState(() {
+            _currentTabIndex = index;
+          });
+        },
+      ),
       body: IndexedStack(
         index: _currentTabIndex,
         children: pages,
@@ -202,9 +213,24 @@ class _HomeScreenState extends State<HomeScreen> {
         final locale = Provider.of<LocaleProvider>(context);
 
         return Scaffold(
+          drawer: AppDrawer(
+            currentTabIndex: _currentTabIndex,
+            onSelectTab: (index) {
+              setState(() {
+                _currentTabIndex = index;
+              });
+            },
+          ),
           appBar: AppBar(
             elevation: 0.5,
-            titleSpacing: 16,
+            leading: Builder(
+              builder: (ctx) => IconButton(
+                icon: const Icon(Icons.menu_rounded, color: AppConstants.primaryColor, size: 28),
+                tooltip: 'Menu Bar (ምናሌ)',
+                onPressed: () => Scaffold.of(ctx).openDrawer(),
+              ),
+            ),
+            titleSpacing: 0,
             title: Row(
               children: [
                 Container(
@@ -213,9 +239,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: AppConstants.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.storefront_rounded, color: AppConstants.primaryColor, size: 24),
+                  child: const Icon(Icons.storefront_rounded, color: AppConstants.primaryColor, size: 22),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -225,7 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         color: AppConstants.primaryColor,
                         fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                        fontSize: 17,
                       ),
                     ),
                     Text(
@@ -282,54 +308,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
-              IconButton(
-                icon: const Icon(Icons.favorite_rounded, color: Colors.redAccent),
-                tooltip: 'Saved Favorites',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const FavoritesScreen()),
-                  );
-                },
-              ),
-              Consumer<AuthProvider>(
-                builder: (context, auth, _) {
-                  final user = auth.userModel;
-                  if (user != null && user.isAdmin) {
-                    return IconButton(
-                      icon: const Icon(Icons.shield_rounded, color: Colors.amber),
-                      tooltip: 'Super Admin Dashboard',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
-                        );
-                      },
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.campaign_outlined, color: AppConstants.primaryColor),
-                tooltip: 'Wanted Board (ፈልጉልኝ)',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ItemRequestsScreen()),
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.receipt_long_outlined, color: AppConstants.primaryColor),
-                tooltip: 'My Orders & Sales',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const OrdersScreen()),
-                  );
-                },
-              ),
               Consumer<AuthProvider>(
                 builder: (context, auth, _) {
                   final uid = auth.userModel?.uid;
@@ -357,6 +335,107 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   );
                 },
+              ),
+              // Top Quick Menu Bar dropdown
+              Builder(
+                builder: (menuCtx) => PopupMenuButton<String>(
+                  icon: const Icon(Icons.menu_open_rounded, color: AppConstants.primaryColor, size: 26),
+                  tooltip: 'Menu Bar (ፈጣን ምናሌ)',
+                  onSelected: (val) {
+                    final auth = Provider.of<AuthProvider>(context, listen: false);
+                    final user = auth.userModel;
+                    switch (val) {
+                      case 'drawer':
+                        Scaffold.of(menuCtx).openDrawer();
+                        break;
+                      case 'wanted':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemRequestsScreen()));
+                        break;
+                      case 'orders':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()));
+                        break;
+                      case 'favorites':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()));
+                        break;
+                      case 'verify':
+                        if (user != null) {
+                          showDialog(context: context, builder: (_) => VerifyIdDialog(user: user));
+                        }
+                        break;
+                      case 'admin':
+                        if (user != null && user.isAdmin) {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
+                        } else {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminLoginScreen()));
+                        }
+                        break;
+                    }
+                  },
+                  itemBuilder: (ctx) => [
+                    const PopupMenuItem(
+                      value: 'drawer',
+                      child: Row(
+                        children: [
+                          Icon(Icons.menu_rounded, color: AppConstants.primaryColor, size: 20),
+                          SizedBox(width: 10),
+                          Text('Full Menu Bar (ሙሉ ምናሌ)', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(
+                      value: 'wanted',
+                      child: Row(
+                        children: [
+                          Icon(Icons.campaign_outlined, color: Colors.orange, size: 20),
+                          SizedBox(width: 10),
+                          Text('Wanted Board (ፈልጉልኝ)'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'orders',
+                      child: Row(
+                        children: [
+                          Icon(Icons.receipt_long_outlined, color: Colors.blue, size: 20),
+                          SizedBox(width: 10),
+                          Text('My Orders & Escrow'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'favorites',
+                      child: Row(
+                        children: [
+                          Icon(Icons.favorite_outline, color: Colors.redAccent, size: 20),
+                          SizedBox(width: 10),
+                          Text('Saved Favorites'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'verify',
+                      child: Row(
+                        children: [
+                          Icon(Icons.verified_user_outlined, color: Colors.green, size: 20),
+                          SizedBox(width: 10),
+                          Text('ID Verification'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(
+                      value: 'admin',
+                      child: Row(
+                        children: [
+                          Icon(Icons.shield_outlined, color: Colors.amber, size: 20),
+                          SizedBox(width: 10),
+                          Text('Super Admin Portal'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(width: 4),
             ],
